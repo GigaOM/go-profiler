@@ -1,6 +1,6 @@
 <?php
 
-class bProfile
+class GO_Profiler
 {
 
 	public $hooks = array();
@@ -85,7 +85,7 @@ class bProfile
 		}
 
 		?>
-		<h2>bProfile hook call transcript</h2>
+		<h2>Hook call transcript</h2>
 		<table>
 			<tr>
 				<td>Hook</td>
@@ -122,14 +122,14 @@ class bProfile
 				number_format( $v->query_runtime, 4 ),
 				number_format( $delta_q[ $k ], 4 ),
 				$v->query_count,
-				print_r( $v->queries, TRUE ),
-				print_r( $v->backtrace, TRUE )
+				'<pre>' . print_r( $v->queries, TRUE ) . '</pre>',
+				'<pre>' . print_r( $v->backtrace, TRUE ) . '</pre>'
 			);
 		}
 		echo '</table>';
 
 		?>
-		<h2>bProfile aggregated hook usage</h2>
+		<h2>Aggregated hook usage</h2>
 		<table>
 			<tr>
 				<td>Hook</td>
@@ -155,4 +155,16 @@ class bProfile
 		echo '</table>';
 
 	}
+}
+
+function go_profiler()
+{
+	global $go_profiler;
+
+	if( ! $go_profiler )
+	{
+		$go_profiler = new GO_Profiler();
+	}
+
+	return $go_profiler;
 }
