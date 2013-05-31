@@ -13,12 +13,15 @@ class go_profiler_aggregate_panel extends Debug_Bar_Panel {
 	public function render(){
 		?>
 			<h2>Aggregated hook usage</h2>
-			<table id='debug_aggregate_table'>
+			<table id='debug_aggregate_table' style='font-size:12px'>
 				<tr>
-					<td>Hook</td>
-					<td>Calls</td>
-					<td>Memory usage</td>
-					<td>Time</td>
+          <td colspan="3"> Filter: <input type='text' id='aggregate_search'/></td>
+        </tr>
+				<tr>
+					<th>Hook</th>
+					<th>Calls</th>
+					<th>Memory usage</th>
+					<th>Time</th>
 				</tr>
 			</table>
 		<?php

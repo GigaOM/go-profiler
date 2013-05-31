@@ -62,6 +62,7 @@ class GO_Profiler
 		$backtrace = array();
 		foreach ( array_slice( debug_backtrace(), 4 , 2 ) as $temp )
 		{
+				//had to change these to test, as WP_DEBUG sets error_reporting to E_ALL - page fills with warnings for functions w/o files
 		      $backtrace_function = ( isset( $temp['function'] ) ) ? $temp['function'] : ' ';
       		$backtrace_file = ( isset( $temp['file'] ) ) ? sprintf(' in %1$s()',$temp['file']) : ' ';
       		$backtrace_line = ( isset( $temp['line'] ) ) ? sprintf(' at %1$s()',$temp['line']) : ' ';
@@ -83,7 +84,7 @@ class GO_Profiler
 
 	public function shutdown()
 	{
-
+		//global $wpdb;
 
 		$delta_m = $delta_t = $delta_q = $hook = $hook_m = $hook_t = array();
 		foreach( $this->hooks as $k => $v )
@@ -114,6 +115,7 @@ class GO_Profiler
 		foreach( $this->hooks as $k => $v )
 		{
 			$hook_info[] = array(
+				'hook' => $v->hook,
 				'memory' => number_format( $v->memory / 1024 / 1024, 3 ),
         'delta-m' => number_format( $delta_m[ $k ] / 1024 / 1024, 3 ),
         'runtime' => number_format( $v->runtime, 4 ),
@@ -136,7 +138,10 @@ class GO_Profiler
 			);
 		}
 	
-	$ret_json = "<script> var go_profiler_data = '" . json_encode( array( 'hook'=>$hook_info, 'agg'=>$agg_hook ) ) . "'; </script>";
+	$ret_json = "<script> var go_profiler_data = '" 
+		. json_encode( array( 'hooks' => $hook_info, 'aggregate' => $agg_hook ) ) 
+		. "'; jQuery(document).trigger('go-profiler-data-loaded', [ go_profiler_data ] );"
+		." </script>";
 	echo $ret_json;
 	}
 }
