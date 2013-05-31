@@ -10,7 +10,35 @@ class GO_Profiler
 	public function __construct()
 	{
 		add_action( 'all', array( $this, 'hook' ) );
+		add_action( 'init', array( $this, 'init' ) );
+		add_action( 'wp_enqueue_scripts', array( $this, 'enq_scripts' ) );
+		add_filter( 'debug_bar_panels',array( $this, 'add_profiler_panels' ) );
 		register_shutdown_function( array( $this, 'shutdown' ) );
+	}
+
+	public function init(){
+		wp_register_script( 'mustache', plugins_url().'/go-profiler/components/js/external/jquery.mustache.js', false, false, true );
+    wp_register_script( 'go-profiler', plugins_url().'/go-profiler/components/js/go-profiler.js', array( 'mustache' ), false, true );
+	}
+
+	public function enq_scripts(){
+		wp_enqueue_script( 'mustache');
+    wp_enqueue_script( 'go-profiler');
+	}
+
+	public function add_profiler_panels($panels)
+	{
+		if ( ! class_exists( 'GO_Profiler_Hook_Panel' ) )
+    {
+      include ( 'class-go-profiler-hook-panel.php' );
+      $panels[] = new GO_Profiler_Hook_Panel();
+    }
+		if ( ! class_exists( 'GO_Profiler_Aggregate_Panel' ) )
+    {
+      include ( 'class-go-profiler-aggregate-panel.php' );
+      $panels[] = new GO_Profiler_Aggregate_Panel();
+    }
+		return $panels;
 	}
 
 	public function hook()
@@ -34,11 +62,10 @@ class GO_Profiler
 		$backtrace = array();
 		foreach ( array_slice( debug_backtrace(), 4 , 2 ) as $temp )
 		{
-			$backtrace[] = sprintf( '%1$s() in %2$s#%3$s',
-				$temp['function'],
-				$temp['file'],
-				$temp['line']
-			);
+		      $backtrace_function = ( isset( $temp['function'] ) ) ? $temp['function'] : ' ';
+      		$backtrace_file = ( isset( $temp['file'] ) ) ? sprintf(' in %1$s()',$temp['file']) : ' ';
+      		$backtrace_line = ( isset( $temp['line'] ) ) ? sprintf(' at %1$s()',$temp['line']) : ' ';
+        	$backtrace[] = $backtrace_function.$backtrace_line.$backtrace_file;
 		}
 
 		// capture the remaining data
@@ -84,76 +111,33 @@ class GO_Profiler
 			$hook_t[ $v->hook ] += $delta_t[ $k ]; 
 		}
 
-		?>
-		<h2>Hook call transcript</h2>
-		<table>
-			<tr>
-				<td>Hook</td>
-				<td>Memory<br />(megabytes)</td>
-				<td>Memory delta</td>
-				<td>Running time<br />(seconds)</td>
-				<td>Running time delta</td>
-				<td>DB query running time<br />(seconds)</td>
-				<td>DB query running time delta</td>
-				<td>Query running count</td>
-				<td>Queries</td>
-				<td>Backtrace</td>
-			</tr>
-		<?php
 		foreach( $this->hooks as $k => $v )
 		{
-			printf('<tr>
-					<td>%1$s</td>
-					<td>%2$s</td>
-					<td>%3$s</td>
-					<td>%4$s</td>
-					<td>%5$s</td>
-					<td>%6$s</td>
-					<td>%7$s</td>
-					<td>%8$s</td>
-					<td>%9$s</td>
-					<td>%10$s</td>
-				</tr>',
-				$v->hook,
-				number_format( $v->memory / 1024 / 1024, 3 ),
-				number_format( $delta_m[ $k ] / 1024 / 1024, 3 ),
-				number_format( $v->runtime, 4 ),
-				number_format( $delta_t[ $k ], 4 ),
-				number_format( $v->query_runtime, 4 ),
-				number_format( $delta_q[ $k ], 4 ),
-				$v->query_count,
-				'<pre>' . print_r( $v->queries, TRUE ) . '</pre>',
-				'<pre>' . print_r( $v->backtrace, TRUE ) . '</pre>'
-			);
+			$hook_info[] = array(
+				'memory' => number_format( $v->memory / 1024 / 1024, 3 ),
+        'delta-m' => number_format( $delta_m[ $k ] / 1024 / 1024, 3 ),
+        'runtime' => number_format( $v->runtime, 4 ),
+        'delta-r' => number_format( $delta_t[ $k ], 4 ),
+        'q-runtime' => number_format( $v->query_runtime, 4 ),
+        'delta-q' => number_format( $delta_q[ $k ], 4 ),
+        'q-count' => $v->query_count,
+        'queries' => $v->queries,
+        'backtrace' => $v->backtrace
+			); 
 		}
-		echo '</table>';
 
-		?>
-		<h2>Aggregated hook usage</h2>
-		<table>
-			<tr>
-				<td>Hook</td>
-				<td>Calls</td>
-				<td>Memory usage</td>
-				<td>Time</td>
-			</tr>
-		<?php
 		foreach( $hook as $k => $v )
 		{
-			printf('<tr>
-					<td>%1$s</td>
-					<td>%2$s</td>
-					<td>%3$s</td>
-					<td>%4$s</td>
-				</tr>',
-				$k,
-				number_format( $v ),
-				number_format( $hook_m[ $k ] / 1024 / 1024, 3 ),
-				number_format( $hook_t[ $k ], 4 )
+			$agg_hook[] = array(
+				'hook' => $k,
+        'calls' => number_format( $v ),
+        'memory' => number_format( $hook_m[ $k ] / 1024 / 1024, 3 ),
+        'time' => number_format( $hook_t[ $k ], 4 )
 			);
 		}
-		echo '</table>';
-
+	
+	$ret_json = "<script> var go_profiler_data = '" . json_encode( array( 'hook'=>$hook_info, 'agg'=>$agg_hook ) ) . "'; </script>";
+	echo $ret_json;
 	}
 }
 
