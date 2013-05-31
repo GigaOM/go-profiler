@@ -56,6 +56,8 @@ class GO_Profiler
 				$queries[] = $query[0];
 				$this->_query_running_time += $query[1];
 			}
+		}else{
+			$queries[] = $this->_queries_at_last_call;//$wpdb->queries;
 		}
 
 		// get a subset of the backtrace and format it into text
@@ -79,6 +81,7 @@ class GO_Profiler
 			'queries' => count( $queries ) ? $queries : NULL,
 			'backtrace' => $backtrace,
 		);
+
 		$this->_queries_at_last_call = absint( $wpdb->num_queries );
 	}
 
@@ -114,7 +117,7 @@ class GO_Profiler
 
 		foreach( $this->hooks as $k => $v )
 		{
-			$hook_info[] = array(
+			$go_profile_hook_info[] = array(
 				'hook' => $v->hook,
 				'memory' => number_format( $v->memory / 1024 / 1024, 3 ),
         'delta-m' => number_format( $delta_m[ $k ] / 1024 / 1024, 3 ),
@@ -127,22 +130,29 @@ class GO_Profiler
         'backtrace' => $v->backtrace
 			); 
 		}
-
+		$go_profile_total = $go_profile_max_mem = $go_profile_longest = $go_profile_popular = 0;
 		foreach( $hook as $k => $v )
-		{
-			$agg_hook[] = array(
+		{	
+			$go_profile_agg_hook[] = array(
 				'hook' => $k,
         'calls' => number_format( $v ),
         'memory' => number_format( $hook_m[ $k ] / 1024 / 1024, 3 ),
         'time' => number_format( $hook_t[ $k ], 4 )
 			);
+			$go_profile_total += $v;
+			$go_profile_max_mem = ( $hook_m[ $k ] > $go_profile_max_mem ) ? $hook_m[ $k ] : $go_profile_max_mem;
+			$go_profile_longest = ( $hook_t[ $k ] > $go_profile_longest ) ? $hook_t[ $k ] : $go_profile_longest;
+			$go_profile_popular = ( $v > $go_profile_popular ) ? $v : $go_profile_popular;
 		}
+		
+		$go_profile_summary = array( 'total_hooks' => $go_profile_total, 'max_mem' => $go_profile_max_mem, 'longest_hook' => $go_profile_longest, 'most_often' => $go_profile_popular );
 	
-	$ret_json = "<script> var go_profiler_data = '" 
-		. json_encode( array( 'hooks' => $hook_info, 'aggregate' => $agg_hook ) ) 
-		. "'; jQuery(document).trigger('go-profiler-data-loaded', [ go_profiler_data ] );"
-		." </script>";
-	echo $ret_json;
+		$go_profile_ret_json = "<script> var go_profiler_data = '" 
+			. json_encode( array( 'summary' => $go_profile_summary, 'hooks' => $go_profile_hook_info, 'aggregate' => $go_profile_agg_hook ) ) 
+			. "'; jQuery(document).trigger('go-profiler-data-loaded', [ go_profiler_data ] );"
+			." </script>";
+		
+		echo $go_profile_ret_json;
 	}
 }
 

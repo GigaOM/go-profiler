@@ -7,7 +7,7 @@
 class go_profiler_aggregate_panel extends Debug_Bar_Panel {
 	
 	public function init() {
-		$this->title( __( 'Aggregated hook usage', 'debug-bar' ) );
+		$this->title( __( 'Aggregated Hook Usage', 'debug-bar' ) );
 	}
 
 	public function render(){

@@ -7,7 +7,7 @@
 class go_profiler_hook_panel extends Debug_Bar_Panel {
 	
 	public function init() {
-		$this->title( __( 'Hook call transcript', 'debug-bar' ) );
+		$this->title( __( 'Hook Call Transcript', 'debug-bar' ) );
 	}
 	/*
 		I'm going to use some inline styles here...
@@ -16,7 +16,6 @@ class go_profiler_hook_panel extends Debug_Bar_Panel {
 	*/
 	public function render(){
 		?>
-			<h2>Hook call transcript</h2>
 			<table id='debug_hook_table' style='font-size:12px;'>
 				<tr>
 					<td colspan="3"> Filter: <input type='text' id='hook_search'/></td>

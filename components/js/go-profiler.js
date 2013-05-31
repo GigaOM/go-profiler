@@ -5,6 +5,11 @@ var GO_Profiler_Debug = function GO_Profiler_Debug() {
 
 			var profiler_data = jQuery.parseJSON( go_profiler_data );
 			
+			var go_profiler_summary_template = Mustache.compile("{{#summary}}<h2><span>TOTAL HOOKS</span>{{total_hooks}}</h2><h2><span>MOST MEMORY INTENSIVE</span>{{max_mem}}</h2><h2><span>LONGEST RUNNING</span>{{longest_hook}}</h2><h2><span>USED MOST OFTEN</span>{{most_often}}</h2>{{/summary}}");
+			var summary_row = go_profiler_summary_template(profiler_data);
+			$( "#debug-menu-target-go_profiler_hook_panel" ).prepend( summary_row );
+			$( "#debug-menu-target-go_profiler_aggregate_panel" ).prepend( summary_row );
+	
 			var hook_template = Mustache.compile( " {{#hooks}} <tr> <td> {{hook}} </td> <td> {{memory}} </td> <td> {{delta-m}} </td> <td> {{runtime}} </td> <td> {{delta-r}} </td> <td> {{q-runtime}} </td> <td> {{delta-q}} </td> <td> {{q-count}} </td> <td> {{queries}} </td> <td style='white-space:nowrap'> {{#backtrace}} {{.}} <br/> {{/backtrace}}</td </tr> {{/hooks}}" );
 			var hook_rows = hook_template(  profiler_data );
 			$( "#debug_hook_table > tbody:last" ).append( hook_rows );
