@@ -4,9 +4,11 @@
 * adds a new panel for hook info
 */
 
-class go_profiler_hook_panel extends Debug_Bar_Panel {
+class go_profiler_hook_panel extends Debug_Bar_Panel 
+{
 	
-	public function init() {
+	public function init() 
+	{
 		$this->title( __( 'Hook Call Transcript', 'debug-bar' ) );
 	}
 	/*
@@ -14,7 +16,8 @@ class go_profiler_hook_panel extends Debug_Bar_Panel {
 		trying to make the table more legible. Since this is for dev only,
 		I'm not sure if we should bother with a style sheet?
 	*/
-	public function render(){
+	public function render()
+	{
 		?>
 			<table id='debug_hook_table' style='font-size:12px;'>
 				<tr>
