@@ -37,6 +37,8 @@ var GO_Profiler_Debug = function GO_Profiler_Debug() {
 		
 	});
 }
-	var go_profiler_filler = new GO_Profiler_Debug();
+	$(document).ready(function(){
+		var go_profiler_filler = new GO_Profiler_Debug();
+	}
 })( jQuery );
 
