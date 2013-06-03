@@ -12,7 +12,10 @@ Author URI: http://maisonbisson.com/blog/
 if ( defined( 'WP_DEBUG' ) && WP_DEBUG )
 {
 	//need this set to gather query data
-	define( 'SAVEQUERIES', TRUE );
+	if ( ! defined( 'SAVEQUERIES' ) ) 
+	{
+		define( 'SAVEQUERIES', TRUE );
+	}
 	require __DIR__ . '/components/class-go-profiler.php';
 	go_profiler();
 }

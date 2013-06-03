@@ -19,13 +19,15 @@ class GO_Profiler
 	public function init()
 	{
 		wp_register_script( 'mustache', plugins_url( 'js/external/jquery.mustache.js', __FILE__ ), false, false, true );
-    		wp_register_script( 'go-profiler', plugins_url( 'js/go-profiler.js', __FILE__ ), array( 'mustache' ), false, true );
+    wp_register_script( 'go-profiler', plugins_url( 'js/go-profiler.js', __FILE__ ), array( 'mustache' ), false, true );
+		wp_register_style( 'go-profiler', plugins_url( 'css/go-profiler.css', __FILE__ ), false, false, 'all' );
 	}
 
 	public function enq_scripts()
 	{
 		wp_enqueue_script( 'mustache');
 		wp_enqueue_script( 'go-profiler' );
+		wp_enqueue_style( 'go-profiler' );	
 	}
 
 	public function add_profiler_panels($panels)
@@ -71,10 +73,10 @@ class GO_Profiler
 		foreach ( array_slice( debug_backtrace(), 4 , 2 ) as $temp )
 		{
 			//had to change these to test, as WP_DEBUG sets error_reporting to E_ALL - page fills with warnings for functions w/o files
-			$backtrace_function = ( isset( $temp['function'] ) ) ? $temp['function'] : ' ';
-			$backtrace_file = ( isset( $temp['file'] ) ) ? sprintf(' in %1$s()',$temp['file']) : ' ';
-			$backtrace_line = ( isset( $temp['line'] ) ) ? sprintf(' at %1$s()',$temp['line']) : ' ';
-			$backtrace[] = $backtrace_function.$backtrace_line.$backtrace_file;
+			$backtrace_function = isset( $temp['function'] ) ? $temp['function'] : ' ';
+			$backtrace_file = isset( $temp['file'] ) ? sprintf( ' in %1$s()', $temp['file']) : ' ';
+			$backtrace_line = isset( $temp['line'] ) ? sprintf( ' at %1$s()', $temp['line']) : ' ';
+			$backtrace[] = $backtrace_function . $backtrace_line . $backtrace_file;
 		}
 
 		// capture the remaining data

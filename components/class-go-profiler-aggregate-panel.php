@@ -1,31 +1,40 @@
 <?php
 
 /**
-* adds a new panel for aggregate hook info
+* Adds a new panel for aggregate hook info.
 */
 
-class go_profiler_aggregate_panel extends Debug_Bar_Panel
+class GO_profiler_aggregate_panel extends Debug_Bar_Panel
 {
-	
+
+	/**
+	* Initializes debug-bar tab for aggregate hook usage
+	*/
+
 	public function init() 
 	{
 		$this->title( __( 'Aggregated Hook Usage', 'debug-bar' ) );
 	}
 
+	/**
+	*	Renders base table for go-profiler.js to fill
+	*/
+	
 	public function render()
 	{
+		include_once 'templates/go-profiler-mustache-template.php';
 		?>
-			<table id='debug_aggregate_table' style='font-size:12px'>
-				<tr>
-          <td colspan="3"> Filter: <input type='text' id='aggregate_search'/></td>
-        </tr>
-				<tr>
-					<th>Hook</th>
-					<th>Calls</th>
-					<th>Memory usage</th>
-					<th>Time</th>
-				</tr>
-			</table>
+		<table id='debug-aggregate-table' style='font-size:12px'>
+			<tr>
+				<td colspan="3"> Filter: <input type='text' class='go-profiler-search'/></td>
+			</tr>
+			<tr>
+				<th>hook</th>
+				<th>calls</th>
+				<th>memory usage</th>
+				<th>time</th>
+			</tr>
+		</table>
 		<?php
 	}
 
