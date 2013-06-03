@@ -25,7 +25,7 @@ class GO_Profiler
 	public function enq_scripts()
 	{
 		wp_enqueue_script( 'mustache');
-    wp_enqueue_script( 'go-profiler' );
+		wp_enqueue_script( 'go-profiler' );
 	}
 
 	public function add_profiler_panels($panels)
@@ -135,6 +135,7 @@ class GO_Profiler
 			); 
 		}
 		$go_profile_total = $go_profile_max_mem = $go_profile_longest = $go_profile_popular = 0;
+		
 		foreach( $hook as $k => $v )
 		{	
 			$hook_mem = ( $hook_m[ $k ] / 1024 ) / 1024;
