@@ -4,7 +4,7 @@
 * Adds a new panel for hook info.
 */
 
-class GO_profiler_hook_panel extends Debug_Bar_Panel 
+class GO_Profiler_Hook_Panel extends Debug_Bar_Panel 
 {
 
 	/**
@@ -22,9 +22,9 @@ class GO_profiler_hook_panel extends Debug_Bar_Panel
 	
 	public function render()
 	{
-		include_once 'templates/go-profiler-mustache-template.php';
+		include_once __DIR__ . '/templates/go-profiler-mustache-template.php';
 		?>
-			<table id='debug-hook-table' style='font-size:12px;'>
+			<table id='debug-hook-table'> 
 				<tr>
 					<td colspan="3"> Filter: <input type='text' class='go-profiler-search'/></td>
 				</tr>

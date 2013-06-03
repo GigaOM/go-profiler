@@ -1,14 +1,18 @@
 ( function( $ ) {
 var GO_Profiler_Debug = function GO_Profiler_Debug() {
+	console.log('init');
   $( document ).on( 'go-profiler-data-loaded', function( event, go_profiler_data ) {
+		console.log ('loaded');
+
 		if( go_profiler_data ) {
 			var profiler_data = $.parseJSON( go_profiler_data );
-			//@TODO: move the templates to appropriate php files
-			var go_profiler_summary_template = Mustache.compile("{{#summary}}<h2><span>TOTAL HOOKS</span>{{total_hooks}}</h2><h2><span>MOST MEMORY INTENSIVE</span>{{max_mem}} MB</h2><h2><span>LONGEST RUNNING</span>{{longest_hook}} seconds </h2><h2><span>USED MOST OFTEN</span>{{most_often}}</h2>{{/summary}}");
-			var summary_row = go_profiler_summary_template(profiler_data);
-			$( "#debug-menu-target-go-profiler-hook-panel" ).prepend( summary_row );
-			$( "#debug-menu-target-go-profiler-aggregate-panel" ).prepend( summary_row );
-	
+			console.log( go_profiler_data );
+			
+			var go_profiler_summary_row = Mustache.render( $( '#go-profiler-summary-tpl' ).html(), profiler_data );
+			console.log(go_profiler_summary_row);
+			$( "#debug-menu-target-GO-Profiler-Hook-Panel" ).prepend( go_profiler_summary_row );
+			$( "#debug-menu-target-GO-Profiler-Aggregate-Panel" ).prepend( go_profiler_summary_row );
+			
 			var $go_profiler_hook_rows = Mustache.render( $( '#go-profiler-hook-tpl' ).html(), profiler_data ); 
 			$( "#debug-hook-table > tbody:last" ).append( $go_profiler_hook_rows );
 			
@@ -23,6 +27,7 @@ var GO_Profiler_Debug = function GO_Profiler_Debug() {
 
 				var $go_profiler_cached_rows = ( $( this ).closest( "table" ).attr( 'id' ) == 'debug-hook-table' ) ? $hook_cached_rows : $aggregate_cached_rows ;
         var term = $( this ).val().split( ' ' );
+
 				if( "" != term )
 				{
 					$go_profiler_cached_rows.hide();
@@ -33,12 +38,14 @@ var GO_Profiler_Debug = function GO_Profiler_Debug() {
         } else {
 					$go_profiler_cached_rows.show();
         }
+
     });
 		
 	});
 }
-	$(document).ready(function(){
+//	$(document).ready( function() {
 		var go_profiler_filler = new GO_Profiler_Debug();
-	}
+		console.log('ready');
+//	});
 })( jQuery );
 

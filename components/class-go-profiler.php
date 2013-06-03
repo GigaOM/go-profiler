@@ -18,7 +18,7 @@ class GO_Profiler
 
 	public function init()
 	{
-		wp_register_script( 'mustache', plugins_url( 'js/external/jquery.mustache.js', __FILE__ ), false, false, true );
+		wp_register_script( 'mustache', plugins_url( 'js/external/mustache.js', __FILE__ ), false, false, true );
     wp_register_script( 'go-profiler', plugins_url( 'js/go-profiler.js', __FILE__ ), array( 'mustache' ), false, true );
 		wp_register_style( 'go-profiler', plugins_url( 'css/go-profiler.css', __FILE__ ), false, false, 'all' );
 	}
@@ -35,13 +35,13 @@ class GO_Profiler
 		
 		if ( ! class_exists( 'GO_Profiler_Hook_Panel' ) )
 		{
-			include 'class-go-profiler-hook-panel.php';
+			include __DIR__ . '/class-go-profiler-hook-panel.php';
 			$panels[] = new GO_Profiler_Hook_Panel();
 		}
 		
 		if ( ! class_exists( 'GO_Profiler_Aggregate_Panel' ) )
 		{
-			include 'class-go-profiler-aggregate-panel.php';
+			include __DIR__ . '/class-go-profiler-aggregate-panel.php';
 			$panels[] = new GO_Profiler_Aggregate_Panel();
 		}
 		
@@ -148,17 +148,43 @@ class GO_Profiler
         'time' => number_format( $hook_t[ $k ], 4 ),
 			);
 			$go_profile_total += $v;
-			$go_profile_max_mem = ( $hook_mem > $go_profile_max_mem ) ? $hook_mem : $go_profile_max_mem;
-			$go_profile_longest = ( $hook_t[ $k ] > $go_profile_longest ) ? $hook_t[ $k ] : $go_profile_longest;
-			$go_profile_popular = ( $v > $go_profile_popular ) ? $v : $go_profile_popular;
+			
+			if ( $hook_mem > $go_profile_max_mem ) {
+				$go_profile_max_mem = $hook_mem;
+				$go_profile_max_mem_name = $k;
+			}
+			
+			if( $hook_t[ $k ] > $go_profile_longest ) {
+				$go_profile_longest = $hook_t[ $k ];
+				$go_profile_longest_name = $k;
+			}
+	
+			if( $v > $go_profile_popular ) {
+				$go_profile_popular = $v;
+				$go_profile_popular_name = $k;
+			}
+			
 		}
 		
-		$go_profile_summary = array( 'total_hooks' => number_format( $go_profile_total ), 'max_mem' => number_format( $go_profile_max_mem, 3 ), 'longest_hook' => number_format( $go_profile_longest, 4 ), 'most_often' => number_format( $go_profile_popular ) );
-	
-		$go_profile_ret_json = "<script> var go_profiler_data = '" 
-			. json_encode( array( 'summary' => $go_profile_summary, 'hooks' => $go_profile_hook_info, 'aggregate' => $go_profile_agg_hook ) ) 
-			. "'; jQuery(document).trigger('go-profiler-data-loaded', [ go_profiler_data ] );"
-			." </script>";
+		$go_profile_summary = array(
+			'total_hooks' => number_format( $go_profile_total ),
+			'max_mem' => number_format( $go_profile_max_mem, 3 ),
+			//'max_mem_name' => $go_profile_max_mem_name,
+			'longest_hook' => number_format( $go_profile_longest, 4 ),
+			//'longest_hook_name' => $go_profile_longest_name,
+			'most_often' => number_format( $go_profile_popular ),
+			//'most_often_name' => $go_profile_popular_name,
+		);
+		
+		$go_profiler_json = json_encode( array(
+        'summary' => $go_profile_summary,
+        'hooks' => $go_profile_hook_info,
+        'aggregate' => $go_profile_agg_hook
+        ) );	
+		$go_profile_ret_json = "<script> ( function( $ ) {" 
+			. "var go_profiler_data = '$go_profiler_json';" 
+			. "$(document).trigger('go-profiler-data-loaded', [ go_profiler_data ] );"
+			."})( jQuery ); </script>";
 		
 		echo $go_profile_ret_json;
 	}

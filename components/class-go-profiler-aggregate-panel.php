@@ -4,7 +4,7 @@
 * Adds a new panel for aggregate hook info.
 */
 
-class GO_profiler_aggregate_panel extends Debug_Bar_Panel
+class GO_Profiler_Aggregate_Panel extends Debug_Bar_Panel
 {
 
 	/**
@@ -22,9 +22,9 @@ class GO_profiler_aggregate_panel extends Debug_Bar_Panel
 	
 	public function render()
 	{
-		include_once 'templates/go-profiler-mustache-template.php';
+		include_once __DIR__ . '/templates/go-profiler-mustache-template.php';
 		?>
-		<table id='debug-aggregate-table' style='font-size:12px'>
+		<table id='debug-aggregate-table'>
 			<tr>
 				<td colspan="3"> Filter: <input type='text' class='go-profiler-search'/></td>
 			</tr>
