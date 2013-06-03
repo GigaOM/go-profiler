@@ -53,11 +53,12 @@ class GO_Profiler
 		{
 			foreach( array_slice( $wpdb->queries, $this->_queries_at_last_call ) as $query )
 			{
-				$queries[] = $query[0];
+				$queries[] = 'yes';
+				//$queries[] = $query[0];
 				$this->_query_running_time += $query[1];
 			}
 		}else{
-			$queries[] = $this->_queries_at_last_call;//$wpdb->queries;
+			$queries[] = 'none'; //$this->_queries_at_last_call;
 		}
 
 		// get a subset of the backtrace and format it into text
@@ -133,19 +134,20 @@ class GO_Profiler
 		$go_profile_total = $go_profile_max_mem = $go_profile_longest = $go_profile_popular = 0;
 		foreach( $hook as $k => $v )
 		{	
+			$hook_mem = ($hook_m[ $k ] / 1024) / 1024;
 			$go_profile_agg_hook[] = array(
 				'hook' => $k,
         'calls' => number_format( $v ),
-        'memory' => number_format( $hook_m[ $k ] / 1024 / 1024, 3 ),
+        'memory' => number_format( $hook_mem, 3 ),
         'time' => number_format( $hook_t[ $k ], 4 )
 			);
 			$go_profile_total += $v;
-			$go_profile_max_mem = ( $hook_m[ $k ] > $go_profile_max_mem ) ? $hook_m[ $k ] : $go_profile_max_mem;
+			$go_profile_max_mem = ( $hook_mem > $go_profile_max_mem ) ? $hook_mem : $go_profile_max_mem;
 			$go_profile_longest = ( $hook_t[ $k ] > $go_profile_longest ) ? $hook_t[ $k ] : $go_profile_longest;
 			$go_profile_popular = ( $v > $go_profile_popular ) ? $v : $go_profile_popular;
 		}
 		
-		$go_profile_summary = array( 'total_hooks' => $go_profile_total, 'max_mem' => $go_profile_max_mem, 'longest_hook' => $go_profile_longest, 'most_often' => $go_profile_popular );
+		$go_profile_summary = array( 'total_hooks' => number_format( $go_profile_total ), 'max_mem' => number_format( $go_profile_max_mem, 3 ), 'longest_hook' => number_format( $go_profile_longest, 4 ), 'most_often' => number_format( $go_profile_popular ) );
 	
 		$go_profile_ret_json = "<script> var go_profiler_data = '" 
 			. json_encode( array( 'summary' => $go_profile_summary, 'hooks' => $go_profile_hook_info, 'aggregate' => $go_profile_agg_hook ) ) 

@@ -12,7 +12,6 @@ class go_profiler_aggregate_panel extends Debug_Bar_Panel {
 
 	public function render(){
 		?>
-			<h2>Aggregated hook usage</h2>
 			<table id='debug_aggregate_table' style='font-size:12px'>
 				<tr>
           <td colspan="3"> Filter: <input type='text' id='aggregate_search'/></td>
