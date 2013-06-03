@@ -12,32 +12,37 @@ class GO_Profiler
 		add_action( 'all', array( $this, 'hook' ) );
 		add_action( 'init', array( $this, 'init' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enq_scripts' ) );
-		add_filter( 'debug_bar_panels',array( $this, 'add_profiler_panels' ) );
+		add_filter( 'debug_bar_panels', array( $this, 'add_profiler_panels' ) );
 		register_shutdown_function( array( $this, 'shutdown' ) );
 	}
 
-	public function init(){
-		wp_register_script( 'mustache', plugins_url().'/go-profiler/components/js/external/jquery.mustache.js', false, false, true );
-    wp_register_script( 'go-profiler', plugins_url().'/go-profiler/components/js/go-profiler.js', array( 'mustache' ), false, true );
+	public function init()
+	{
+		wp_register_script( 'mustache', plugins_url( 'js/external/jquery.mustache.js', __FILE__ ), false, false, true );
+    		wp_register_script( 'go-profiler', plugins_url( 'js/go-profiler.js', __FILE__ ), array( 'mustache' ), false, true );
 	}
 
-	public function enq_scripts(){
+	public function enq_scripts()
+	{
 		wp_enqueue_script( 'mustache');
-    wp_enqueue_script( 'go-profiler');
+    wp_enqueue_script( 'go-profiler' );
 	}
 
 	public function add_profiler_panels($panels)
 	{
+		
 		if ( ! class_exists( 'GO_Profiler_Hook_Panel' ) )
-    {
-      include ( 'class-go-profiler-hook-panel.php' );
-      $panels[] = new GO_Profiler_Hook_Panel();
-    }
+		{
+			include 'class-go-profiler-hook-panel.php';
+			$panels[] = new GO_Profiler_Hook_Panel();
+		}
+		
 		if ( ! class_exists( 'GO_Profiler_Aggregate_Panel' ) )
-    {
-      include ( 'class-go-profiler-aggregate-panel.php' );
-      $panels[] = new GO_Profiler_Aggregate_Panel();
-    }
+		{
+			include 'class-go-profiler-aggregate-panel.php';
+			$panels[] = new GO_Profiler_Aggregate_Panel();
+		}
+		
 		return $panels;
 	}
 
@@ -54,22 +59,22 @@ class GO_Profiler
 			foreach( array_slice( $wpdb->queries, $this->_queries_at_last_call ) as $query )
 			{
 				$queries[] = 'yes';
-				//$queries[] = $query[0];
 				$this->_query_running_time += $query[1];
 			}
 		}else{
-			$queries[] = 'none'; //$this->_queries_at_last_call;
+			//adds none as visible test of is_array($wpdb->queries)
+			$queries[] = 'none';
 		}
 
 		// get a subset of the backtrace and format it into text
 		$backtrace = array();
 		foreach ( array_slice( debug_backtrace(), 4 , 2 ) as $temp )
 		{
-				//had to change these to test, as WP_DEBUG sets error_reporting to E_ALL - page fills with warnings for functions w/o files
-		      $backtrace_function = ( isset( $temp['function'] ) ) ? $temp['function'] : ' ';
-      		$backtrace_file = ( isset( $temp['file'] ) ) ? sprintf(' in %1$s()',$temp['file']) : ' ';
-      		$backtrace_line = ( isset( $temp['line'] ) ) ? sprintf(' at %1$s()',$temp['line']) : ' ';
-        	$backtrace[] = $backtrace_function.$backtrace_line.$backtrace_file;
+			//had to change these to test, as WP_DEBUG sets error_reporting to E_ALL - page fills with warnings for functions w/o files
+			$backtrace_function = ( isset( $temp['function'] ) ) ? $temp['function'] : ' ';
+			$backtrace_file = ( isset( $temp['file'] ) ) ? sprintf(' in %1$s()',$temp['file']) : ' ';
+			$backtrace_line = ( isset( $temp['line'] ) ) ? sprintf(' at %1$s()',$temp['line']) : ' ';
+			$backtrace[] = $backtrace_function.$backtrace_line.$backtrace_file;
 		}
 
 		// capture the remaining data
@@ -88,8 +93,6 @@ class GO_Profiler
 
 	public function shutdown()
 	{
-		//global $wpdb;
-
 		$delta_m = $delta_t = $delta_q = $hook = $hook_m = $hook_t = array();
 		foreach( $this->hooks as $k => $v )
 		{
@@ -128,18 +131,18 @@ class GO_Profiler
         'delta-q' => number_format( $delta_q[ $k ], 4 ),
         'q-count' => $v->query_count,
         'queries' => $v->queries,
-        'backtrace' => $v->backtrace
+        'backtrace' => $v->backtrace,
 			); 
 		}
 		$go_profile_total = $go_profile_max_mem = $go_profile_longest = $go_profile_popular = 0;
 		foreach( $hook as $k => $v )
 		{	
-			$hook_mem = ($hook_m[ $k ] / 1024) / 1024;
+			$hook_mem = ( $hook_m[ $k ] / 1024 ) / 1024;
 			$go_profile_agg_hook[] = array(
 				'hook' => $k,
         'calls' => number_format( $v ),
         'memory' => number_format( $hook_mem, 3 ),
-        'time' => number_format( $hook_t[ $k ], 4 )
+        'time' => number_format( $hook_t[ $k ], 4 ),
 			);
 			$go_profile_total += $v;
 			$go_profile_max_mem = ( $hook_mem > $go_profile_max_mem ) ? $hook_mem : $go_profile_max_mem;
