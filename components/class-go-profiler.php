@@ -169,11 +169,11 @@ class GO_Profiler
 		$go_profile_summary = array(
 			'total_hooks' => number_format( $go_profile_total ),
 			'max_mem' => number_format( $go_profile_max_mem, 3 ),
-			//'max_mem_name' => $go_profile_max_mem_name,
+			'max_mem_name' => $go_profile_max_mem_name,
 			'longest_hook' => number_format( $go_profile_longest, 4 ),
-			//'longest_hook_name' => $go_profile_longest_name,
+			'longest_hook_name' => $go_profile_longest_name,
 			'most_often' => number_format( $go_profile_popular ),
-			//'most_often_name' => $go_profile_popular_name,
+			'most_often_name' => $go_profile_popular_name,
 		);
 		
 		$go_profiler_json = json_encode( array(

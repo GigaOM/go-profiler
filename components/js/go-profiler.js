@@ -1,17 +1,13 @@
 ( function( $ ) {
 var GO_Profiler_Debug = function GO_Profiler_Debug() {
-	console.log('init');
   $( document ).on( 'go-profiler-data-loaded', function( event, go_profiler_data ) {
-		console.log ('loaded');
 
 		if( go_profiler_data ) {
 			var profiler_data = $.parseJSON( go_profiler_data );
-			console.log( go_profiler_data );
 			
 			var go_profiler_summary_row = Mustache.render( $( '#go-profiler-summary-tpl' ).html(), profiler_data );
-			console.log(go_profiler_summary_row);
-			$( "#debug-menu-target-GO-Profiler-Hook-Panel" ).prepend( go_profiler_summary_row );
-			$( "#debug-menu-target-GO-Profiler-Aggregate-Panel" ).prepend( go_profiler_summary_row );
+			$( "#debug-menu-target-GO_Profiler_Hook_Panel" ).prepend( go_profiler_summary_row );
+			$( "#debug-menu-target-GO_Profiler_Aggregate_Panel" ).prepend( go_profiler_summary_row );
 			
 			var $go_profiler_hook_rows = Mustache.render( $( '#go-profiler-hook-tpl' ).html(), profiler_data ); 
 			$( "#debug-hook-table > tbody:last" ).append( $go_profiler_hook_rows );
@@ -45,7 +41,6 @@ var GO_Profiler_Debug = function GO_Profiler_Debug() {
 }
 //	$(document).ready( function() {
 		var go_profiler_filler = new GO_Profiler_Debug();
-		console.log('ready');
 //	});
 })( jQuery );
 
