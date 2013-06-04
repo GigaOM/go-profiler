@@ -12,6 +12,7 @@ class GO_Profiler
 		add_action( 'all', array( $this, 'hook' ) );
 		add_action( 'init', array( $this, 'init' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enq_scripts' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enq_scripts' ) );
 		add_filter( 'debug_bar_panels', array( $this, 'add_profiler_panels' ) );
 		register_shutdown_function( array( $this, 'shutdown' ) );
 	}
@@ -19,7 +20,7 @@ class GO_Profiler
 	public function init()
 	{
 		wp_register_script( 'mustache', plugins_url( 'js/external/mustache.js', __FILE__ ), false, false, true );
-    wp_register_script( 'go-profiler', plugins_url( 'js/go-profiler.js', __FILE__ ), array( 'mustache' ), false, true );
+    wp_register_script( 'go-profiler', plugins_url( 'js/go-profiler.js', __FILE__ ), array( 'mustache', 'jquery' ), false, true );
 		wp_register_style( 'go-profiler', plugins_url( 'css/go-profiler.css', __FILE__ ), false, false, 'all' );
 	}
 
