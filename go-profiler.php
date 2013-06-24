@@ -12,7 +12,7 @@ Author URI: http://maisonbisson.com/blog/
 if ( defined( 'WP_DEBUG' ) && WP_DEBUG )
 {
 	//need this set to gather query data
-	if ( ! defined( 'SAVEQUERIES' ) ) 
+	if ( ! defined( 'SAVEQUERIES' ) )
 	{
 		define( 'SAVEQUERIES', TRUE );
 	}
