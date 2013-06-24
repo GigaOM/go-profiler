@@ -4,22 +4,22 @@
 * Adds a new panel for hook info.
 */
 
-class GO_Profiler_Hook_Panel extends Debug_Bar_Panel 
+class GO_Profiler_Hook_Panel extends Debug_Bar_Panel
 {
 
 	/**
 	*	Initializes debug-bar tab for hook transcript.
 	*/
 
-	public function init() 
+	public function init()
 	{
 		$this->title( __( 'Hook Call Transcript', 'debug-bar' ) );
 	}
 
 	/**
 	*	Renders base table for go-profiler.js to fill. 	
-	*/	
-	
+	*/
+
 	public function render()
 	{
 		include_once __DIR__ . '/templates/go-profiler-mustache-template.php';
@@ -47,6 +47,5 @@ class GO_Profiler_Hook_Panel extends Debug_Bar_Panel
 				</tr>
 			</table>
 		<?php
-	}
-
+	}//end render
 }

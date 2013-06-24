@@ -11,7 +11,7 @@ class GO_Profiler_Aggregate_Panel extends Debug_Bar_Panel
 	* Initializes debug-bar tab for aggregate hook usage
 	*/
 
-	public function init() 
+	public function init()
 	{
 		$this->title( __( 'Aggregated Hook Usage', 'debug-bar' ) );
 	}
@@ -19,7 +19,7 @@ class GO_Profiler_Aggregate_Panel extends Debug_Bar_Panel
 	/**
 	*	Renders base table for go-profiler.js to fill
 	*/
-	
+
 	public function render()
 	{
 		include_once __DIR__ . '/templates/go-profiler-mustache-template.php';
@@ -36,6 +36,5 @@ class GO_Profiler_Aggregate_Panel extends Debug_Bar_Panel
 			</tr>
 		</table>
 		<?php
-	}
-
+	}//end render
 }

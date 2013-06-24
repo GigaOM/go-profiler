@@ -20,7 +20,7 @@ class GO_Profiler
 	public function init()
 	{
 		wp_register_script( 'mustache', plugins_url( 'js/external/mustache.js', __FILE__ ), false, false, true );
-    wp_register_script( 'go-profiler', plugins_url( 'js/go-profiler.js', __FILE__ ), array( 'mustache', 'jquery' ), false, true );
+		wp_register_script( 'go-profiler', plugins_url( 'js/go-profiler.js', __FILE__ ), array( 'mustache', 'jquery' ), false, true );
 		wp_register_style( 'go-profiler', plugins_url( 'css/go-profiler.css', __FILE__ ), false, false, 'all' );
 	}
 
@@ -28,26 +28,26 @@ class GO_Profiler
 	{
 		wp_enqueue_script( 'mustache');
 		wp_enqueue_script( 'go-profiler' );
-		wp_enqueue_style( 'go-profiler' );	
+		wp_enqueue_style( 'go-profiler' );
 	}
 
-	public function add_profiler_panels($panels)
+	public function add_profiler_panels( $panels )
 	{
-		
+
 		if ( ! class_exists( 'GO_Profiler_Hook_Panel' ) )
 		{
 			include __DIR__ . '/class-go-profiler-hook-panel.php';
 			$panels[] = new GO_Profiler_Hook_Panel();
-		}
-		
+		}//end if
+
 		if ( ! class_exists( 'GO_Profiler_Aggregate_Panel' ) )
 		{
 			include __DIR__ . '/class-go-profiler-aggregate-panel.php';
 			$panels[] = new GO_Profiler_Aggregate_Panel();
-		}
-		
+		}//end if
+
 		return $panels;
-	}
+	}//end add_profiler_panels
 
 	public function hook()
 	{
@@ -64,14 +64,16 @@ class GO_Profiler
 				$queries[] = 'yes';
 				$this->_query_running_time += $query[1];
 			}
-		}else{
+		}
+		else
+		{
 			//adds none as visible test of is_array($wpdb->queries)
 			$queries[] = 'none';
-		}
+		}//end else
 
 		// get a subset of the backtrace and format it into text
 		$backtrace = array();
-		foreach ( array_slice( debug_backtrace(), 4 , 2 ) as $temp )
+		foreach ( array_slice( debug_backtrace(), 4, 2 ) as $temp )
 		{
 			//had to change these to test, as WP_DEBUG sets error_reporting to E_ALL - page fills with warnings for functions w/o files
 			$backtrace_function = isset( $temp['function'] ) ? $temp['function'] : ' ';
@@ -81,7 +83,7 @@ class GO_Profiler
 		}
 
 		// capture the remaining data
-		$this->hooks[] = (object) array(
+		$this->hooks[] = ( object ) array(
 			'hook' => func_get_arg( 0 ), // the name of the current hook
 			'memory' => memory_get_usage( FALSE ), // total script memory usage, in bytes
 			'runtime' => $timenow - $timestart, // the total execution time, in seconds, at the start of the hook
@@ -92,7 +94,7 @@ class GO_Profiler
 		);
 
 		$this->_queries_at_last_call = absint( $wpdb->num_queries );
-	}
+	}//end hook
 
 	public function shutdown()
 	{
@@ -106,90 +108,88 @@ class GO_Profiler
 			if( ! isset( $hook[ $v->hook ] ))
 			{
 				$hook[ $v->hook ] = 0;
-			}
-			$hook[ $v->hook ]++; 
+			}//end if
+			$hook[ $v->hook ]++;
 
 			if( ! isset( $hook_m[ $v->hook ] ))
 			{
 				$hook_m[ $v->hook ] = 0;
-			}
-			$hook_m[ $v->hook ] += $delta_m[ $k ]; 
+			}//end if
+			$hook_m[ $v->hook ] += $delta_m[ $k ];
 
 			if( ! isset( $hook_t[ $v->hook ] ))
 			{
 				$hook_t[ $v->hook ] = 0;
-			}
-			$hook_t[ $v->hook ] += $delta_t[ $k ]; 
-		}
+			}//end if
+			$hook_t[ $v->hook ] += $delta_t[ $k ];
+		}//end foreach
 
 		foreach( $this->hooks as $k => $v )
 		{
 			$go_profile_hook_info[] = array(
 				'hook' => $v->hook,
 				'memory' => number_format( $v->memory / 1024 / 1024, 3 ),
-        'delta-m' => number_format( $delta_m[ $k ] / 1024 / 1024, 3 ),
-        'runtime' => number_format( $v->runtime, 4 ),
-        'delta-r' => number_format( $delta_t[ $k ], 4 ),
-        'q-runtime' => number_format( $v->query_runtime, 4 ),
-        'delta-q' => number_format( $delta_q[ $k ], 4 ),
-        'q-count' => $v->query_count,
-        'queries' => $v->queries,
-        'backtrace' => $v->backtrace,
-			); 
-		}
+		'delta-m'   => number_format( $delta_m[ $k ] / 1024 / 1024, 3 ),
+		'runtime'   => number_format( $v->runtime, 4 ),
+		'delta-r'   => number_format( $delta_t[ $k ], 4 ),
+		'q-runtime' => number_format( $v->query_runtime, 4 ),
+		'delta-q'   => number_format( $delta_q[ $k ], 4 ),
+		'q-count'   => $v->query_count,
+		'queries'   => $v->queries,
+		'backtrace' => $v->backtrace,
+			);
+		}//end foreach
 		$go_profile_total = $go_profile_max_mem = $go_profile_longest = $go_profile_popular = 0;
-		
+
 		foreach( $hook as $k => $v )
-		{	
+		{
 			$hook_mem = ( $hook_m[ $k ] / 1024 ) / 1024;
 			$go_profile_agg_hook[] = array(
-				'hook' => $k,
-        'calls' => number_format( $v ),
-        'memory' => number_format( $hook_mem, 3 ),
-        'time' => number_format( $hook_t[ $k ], 4 ),
+				'hook'   => $k,
+				'calls'  => number_format( $v ),
+				'memory' => number_format( $hook_mem, 3 ),
+				'time'   => number_format( $hook_t[ $k ], 4 ),
 			);
 			$go_profile_total += $v;
-			
-			if ( $hook_mem > $go_profile_max_mem ) {
+
+			if ( $hook_mem > $go_profile_max_mem )
+			{
 				$go_profile_max_mem = $hook_mem;
 				$go_profile_max_mem_name = $k;
-			}
-			
-			if( $hook_t[ $k ] > $go_profile_longest ) {
+			}//end if
+
+			if( $hook_t[ $k ] > $go_profile_longest )
+			{
 				$go_profile_longest = $hook_t[ $k ];
 				$go_profile_longest_name = $k;
-			}
-	
-			if( $v > $go_profile_popular ) {
+			}//end if
+
+			if( $v > $go_profile_popular )
+			{
 				$go_profile_popular = $v;
 				$go_profile_popular_name = $k;
-			}
-			
-		}
-		
+			}//end if
+		}//end foreach
 		$go_profile_summary = array(
-			'total_hooks' => number_format( $go_profile_total ),
-			'max_mem' => number_format( $go_profile_max_mem, 3 ),
-			'max_mem_name' => $go_profile_max_mem_name,
-			'longest_hook' => number_format( $go_profile_longest, 4 ),
+			'total_hooks'       => number_format( $go_profile_total ),
+			'max_mem'           => number_format( $go_profile_max_mem, 3 ),
+			'max_mem_name'      => $go_profile_max_mem_name,
+			'longest_hook'      => number_format( $go_profile_longest, 4 ),
 			'longest_hook_name' => $go_profile_longest_name,
-			'most_often' => number_format( $go_profile_popular ),
-			'most_often_name' => $go_profile_popular_name,
+			'most_often'        => number_format( $go_profile_popular ),
+			'most_often_name'   => $go_profile_popular_name,
 		);
-		
+
 		$go_profiler_json = json_encode( array(
-        'summary' => $go_profile_summary,
-        'hooks' => $go_profile_hook_info,
-        'aggregate' => $go_profile_agg_hook
-        ) );	
-		$go_profile_ret_json = "<script> ( function( $ ) {" 
-			. "var go_profiler_data = '$go_profiler_json';" 
-			. "$(document).trigger('go-profiler-data-loaded', [ go_profiler_data ] );"
-			."})( jQuery ); </script>";
-		
+			'summary'   => $go_profile_summary,
+			'hooks'     => $go_profile_hook_info,
+			'aggregate' => $go_profile_agg_hook,
+		) );
+		$go_profile_ret_json = "<script> ( function( $ ) { var go_profiler_data = '$go_profiler_json'; $(document).trigger( 'go-profiler-data-loaded', [ go_profiler_data ] ); })( jQuery ); </script>";
+
 		echo $go_profile_ret_json;
-	}
-}
+	}//end shutdown
+}//end class
 
 function go_profiler()
 {
@@ -198,7 +198,7 @@ function go_profiler()
 	if( ! $go_profiler )
 	{
 		$go_profiler = new GO_Profiler();
-	}
+	}//end if
 
 	return $go_profiler;
 }
