@@ -7,6 +7,10 @@ class GO_Profiler
 	private $_queries_at_last_call = 0;
 	private $_query_running_time = 0;
 
+
+	/**
+	 * construct environment
+	 */
 	public function __construct()
 	{
 		add_action( 'all', array( $this, 'hook' ) );
@@ -17,6 +21,9 @@ class GO_Profiler
 		register_shutdown_function( array( $this, 'shutdown' ) );
 	}
 
+	/**
+	 * initialize
+	 */
 	public function init()
 	{
 		wp_register_script( 'mustache', plugins_url( 'js/external/mustache.js', __FILE__ ), false, false, true );
@@ -24,6 +31,9 @@ class GO_Profiler
 		wp_register_style( 'go-profiler', plugins_url( 'css/go-profiler.css', __FILE__ ), false, false, 'all' );
 	}
 
+	/**
+	 * enqueue scripts
+	 */
 	public function enq_scripts()
 	{
 		wp_enqueue_script( 'mustache');
@@ -31,6 +41,12 @@ class GO_Profiler
 		wp_enqueue_style( 'go-profiler' );
 	}
 
+	/**
+	 * add profiler panels
+	 *
+	 * @param $panels array to add
+	 * @return $panels[] go_profiler_panel
+	 */
 	public function add_profiler_panels( $panels )
 	{
 
@@ -49,6 +65,9 @@ class GO_Profiler
 		return $panels;
 	}//end add_profiler_panels
 
+	/**
+	 * hook
+	 */
 	public function hook()
 	{
 
@@ -96,6 +115,9 @@ class GO_Profiler
 		$this->_queries_at_last_call = absint( $wpdb->num_queries );
 	}//end hook
 
+	/**
+	 * shutdown hooks
+	 */
 	public function shutdown()
 	{
 		$delta_m = $delta_t = $delta_q = $hook = $hook_m = $hook_t = array();
@@ -191,6 +213,9 @@ class GO_Profiler
 	}//end shutdown
 }//end class
 
+/**
+ * constructor
+ */
 function go_profiler()
 {
 	global $go_profiler;
