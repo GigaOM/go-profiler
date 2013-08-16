@@ -31,6 +31,12 @@ class GO_Profiler
 		wp_enqueue_style( 'go-profiler' );
 	}
 
+	/**
+	 * add profiler panels
+	 *
+	 * @param $panels array to add
+	 * @return $panels[] go_profiler_panel
+	 */
 	public function add_profiler_panels( $panels )
 	{
 
