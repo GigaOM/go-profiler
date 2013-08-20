@@ -3,28 +3,25 @@
 /**
 * Adds a new panel for hook info.
 */
-
 class GO_Profiler_Hook_Panel extends Debug_Bar_Panel
 {
 
 	/**
-	*	Initializes debug-bar tab for hook transcript.
+	* Initializes debug-bar tab for hook transcript.
 	*/
-
 	public function init()
 	{
 		$this->title( __( 'Hook Call Transcript', 'debug-bar' ) );
 	}
 
 	/**
-	*	Renders base table for go-profiler.js to fill. 	
+	* Renders base table for go-profiler.js to fill.
 	*/
-
 	public function render()
 	{
 		include_once __DIR__ . '/templates/go-profiler-mustache-template.php';
 		?>
-			<table id='debug-hook-table'> 
+			<table id='debug-hook-table'>
 				<tr>
 					<td colspan="3"> Filter: <input type='text' class='go-profiler-search'/></td>
 				</tr>
@@ -41,9 +38,9 @@ class GO_Profiler_Hook_Panel extends Debug_Bar_Panel
 					<th>(MB)</th>
 					<th>&Delta;</th>
 					<th>(sec)</th>
-          <th>&Delta;</th>
+					<th>&Delta;</th>
 					<th>(sec)</th>
-          <th>&Delta;</th>
+					<th>&Delta;</th>
 				</tr>
 			</table>
 		<?php
