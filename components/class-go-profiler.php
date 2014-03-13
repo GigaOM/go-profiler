@@ -2,44 +2,42 @@
 
 class GO_Profiler
 {
-
 	public $hooks = array();
 	private $_queries_at_last_call = 0;
 	private $_query_running_time = 0;
 
-
 	/**
-	 * construct environment
+	 * constructor
 	 */
 	public function __construct()
 	{
 		add_action( 'all', array( $this, 'hook' ) );
 		add_action( 'init', array( $this, 'init' ) );
-		add_action( 'wp_enqueue_scripts', array( $this, 'enq_scripts' ) );
-		add_action( 'admin_enqueue_scripts', array( $this, 'enq_scripts' ) );
+		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 		add_filter( 'debug_bar_panels', array( $this, 'add_profiler_panels' ) );
 		register_shutdown_function( array( $this, 'shutdown' ) );
-	}
+	}//end construct
 
 	/**
 	 * initialize
 	 */
 	public function init()
 	{
-		wp_register_script( 'mustache', plugins_url( 'js/external/mustache.js', __FILE__ ), false, false, true );
+		wp_register_script( 'mustache', plugins_url( 'js/external/mustache.min.js', __FILE__ ), false, false, true );
 		wp_register_script( 'go-profiler', plugins_url( 'js/go-profiler.js', __FILE__ ), array( 'mustache', 'jquery' ), false, true );
 		wp_register_style( 'go-profiler', plugins_url( 'css/go-profiler.css', __FILE__ ), false, false, 'all' );
-	}
+	}//end init
 
 	/**
 	 * enqueue scripts
 	 */
-	public function enq_scripts()
+	public function enqueue_scripts()
 	{
 		wp_enqueue_script( 'mustache');
 		wp_enqueue_script( 'go-profiler' );
 		wp_enqueue_style( 'go-profiler' );
-	}
+	}//end enqueue_scripts
 
 	/**
 	 * add profiler panels
@@ -82,8 +80,8 @@ class GO_Profiler
 			{
 				$queries[] = 'yes';
 				$this->_query_running_time += $query[1];
-			}
-		}
+			}//end foreach
+		}//end if
 		else
 		{
 			//adds none as visible test of is_array($wpdb->queries)
@@ -99,17 +97,17 @@ class GO_Profiler
 			$backtrace_file = isset( $temp['file'] ) ? sprintf( ' in %1$s()', $temp['file']) : ' ';
 			$backtrace_line = isset( $temp['line'] ) ? sprintf( ' at %1$s()', $temp['line']) : ' ';
 			$backtrace[] = $backtrace_function . $backtrace_line . $backtrace_file;
-		}
+		}//end foreach
 
 		// capture the remaining data
 		$this->hooks[] = ( object ) array(
-			'hook' => func_get_arg( 0 ), // the name of the current hook
-			'memory' => memory_get_usage( FALSE ), // total script memory usage, in bytes
-			'runtime' => $timenow - $timestart, // the total execution time, in seconds, at the start of the hook
+			'hook'          => func_get_arg( 0 ), // the name of the current hook
+			'memory'        => memory_get_usage( FALSE ), // total script memory usage, in bytes
+			'runtime'       => $timenow - $timestart, // the total execution time, in seconds, at the start of the hook
 			'query_runtime' => $this->_query_running_time,
-			'query_count' => $wpdb->num_queries,
-			'queries' => count( $queries ) ? $queries : NULL,
-			'backtrace' => $backtrace,
+			'query_count'   => $wpdb->num_queries,
+			'queries'       => count( $queries ) ? $queries : NULL,
+			'backtrace'     => $backtrace,
 		);
 
 		$this->_queries_at_last_call = absint( $wpdb->num_queries );
@@ -151,14 +149,14 @@ class GO_Profiler
 			$go_profile_hook_info[] = array(
 				'hook' => $v->hook,
 				'memory' => number_format( $v->memory / 1024 / 1024, 3 ),
-		'delta-m'   => number_format( $delta_m[ $k ] / 1024 / 1024, 3 ),
-		'runtime'   => number_format( $v->runtime, 4 ),
-		'delta-r'   => number_format( $delta_t[ $k ], 4 ),
-		'q-runtime' => number_format( $v->query_runtime, 4 ),
-		'delta-q'   => number_format( $delta_q[ $k ], 4 ),
-		'q-count'   => $v->query_count,
-		'queries'   => $v->queries,
-		'backtrace' => $v->backtrace,
+				'delta-m'   => number_format( $delta_m[ $k ] / 1024 / 1024, 3 ),
+				'runtime'   => number_format( $v->runtime, 4 ),
+				'delta-r'   => number_format( $delta_t[ $k ], 4 ),
+				'q-runtime' => number_format( $v->query_runtime, 4 ),
+				'delta-q'   => number_format( $delta_q[ $k ], 4 ),
+				'q-count'   => $v->query_count,
+				'queries'   => $v->queries,
+				'backtrace' => $v->backtrace,
 			);
 		}//end foreach
 		$go_profile_total = $go_profile_max_mem = $go_profile_longest = $go_profile_popular = 0;
@@ -214,7 +212,7 @@ class GO_Profiler
 }//end class
 
 /**
- * constructor
+ * Singleton
  */
 function go_profiler()
 {
@@ -226,4 +224,4 @@ function go_profiler()
 	}//end if
 
 	return $go_profiler;
-}
+}//end go_profiler
