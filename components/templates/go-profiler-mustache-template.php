@@ -50,7 +50,10 @@
 				{{q-count}}
 			</td>
 			<td>
-				{{queries}}
+				{{#queries}}
+				{{.}} 
+				{{/queries}}
+				</ul>
 			</td>
 			<td>
 				{{#backtrace}} {{.}} <br/> {{/backtrace}}

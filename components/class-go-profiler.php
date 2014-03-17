@@ -11,7 +11,7 @@ class GO_Profiler
 	 */
 	public function __construct()
 	{
-		add_action( 'all', array( $this, 'hook' ) );
+		add_action( 'all', array( $this, 'hook' ), 11 ); //These go to eleven!
 		add_action( 'init', array( $this, 'init' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
@@ -74,11 +74,12 @@ class GO_Profiler
 
 		// capture the db query info
 		$queries = array();
-		if ( is_array( $wpdb->queries ) )
+		if ( is_array( $wpdb->queries ) && ( $wpdb->num_queries > $this->_queries_at_last_call ) )
 		{
-			foreach( array_slice( $wpdb->queries, $this->_queries_at_last_call ) as $query )
+			
+			foreach( array_slice( $wpdb->queries, ( 0 - ( $wpdb->num_queries - $this->_queries_at_last_call ) ) ) as $query )
 			{
-				$queries[] = 'yes';
+				$queries[] = $wpdb->num_queries - $this->_queries_at_last_call;
 				$this->_query_running_time += $query[1];
 			}//end foreach
 		}//end if
@@ -103,10 +104,10 @@ class GO_Profiler
 		$this->hooks[] = ( object ) array(
 			'hook'          => func_get_arg( 0 ), // the name of the current hook
 			'memory'        => memory_get_usage( FALSE ), // total script memory usage, in bytes
-			'runtime'       => $timenow - $timestart, // the total execution time, in seconds, at the start of the hook
-			'query_runtime' => $this->_query_running_time,
+			'runtime'       => $timenow - $timestart, // the total execution time, in seconds, to the start of the hook
+			'query_runtime' => $this->_query_running_time, // 
 			'query_count'   => $wpdb->num_queries,
-			'queries'       => count( $queries ) ? $queries : NULL,
+			'queries'       => (boolean) $queries ? $queries : NULL,
 			'backtrace'     => $backtrace,
 		);
 
