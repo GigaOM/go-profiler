@@ -1,12 +1,11 @@
 <?php
 /*
-Plugin Name: Gigaom Execution Profiler
+Name: Gigaom Execution Profiler
 Plugin URI: http://kitchen.gigaom.com/
 Description: Profiles the exection flow within WordPress
-Version: a
-Original Author: Casey Bisson
+Version: 1.0
+Author: Casey Bisson
 Author URI: http://maisonbisson.com/blog/
-Contributors: Stephen Page, Stephen Glauser
 */
 
 // only loads if WP_DEBUG is defined and TRUE
