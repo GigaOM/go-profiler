@@ -10,7 +10,7 @@ if ( 'cli' != php_sapi_name() )
 }//end if
 
 // main config
-$pluginslug = 'profiler';
+$pluginslug = 'go-profiler';
 $svn_repo_path = '/tmp/'. $pluginslug; // path to a temp SVN repo. No trailing slash (be cautious about incorrect paths, note that we rm the contents later)
 $svn_repo_url = 'http://plugins.svn.wordpress.org/' . $pluginslug . '/trunk/'; // Remote SVN repo with no trailing slash
 $svn_ignore_files = array( // paths relative to the top of the svn_repo_path
