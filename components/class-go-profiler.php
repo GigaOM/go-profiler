@@ -34,7 +34,7 @@ class GO_Profiler
 	 */
 	public function enqueue_scripts()
 	{
-		wp_enqueue_script( 'mustache');
+		wp_enqueue_script( 'mustache' );
 		wp_enqueue_script( 'go-profiler' );
 		wp_enqueue_style( 'go-profiler' );
 	}//end enqueue_scripts
@@ -42,7 +42,7 @@ class GO_Profiler
 	/**
 	 * add profiler panels
 	 *
-	 * @param $panels array to add
+	 * @param array $panels to add
 	 * @return $panels[] go_profiler_panel
 	 */
 	public function add_profiler_panels( $panels )
@@ -65,6 +65,9 @@ class GO_Profiler
 
 	/**
 	 * hook
+	 *
+	 * @global wpdb $wpdb
+	 * @global ????? $timestart
 	 */
 	public function hook()
 	{
@@ -76,8 +79,7 @@ class GO_Profiler
 		$queries = array();
 		if ( is_array( $wpdb->queries ) && ( $wpdb->num_queries > $this->_queries_at_last_call ) )
 		{
-			
-			foreach( array_slice( $wpdb->queries, ( 0 - ( $wpdb->num_queries - $this->_queries_at_last_call ) ) ) as $query )
+			foreach ( array_slice( $wpdb->queries, ( 0 - ( $wpdb->num_queries - $this->_queries_at_last_call ) ) ) as $query )
 			{
 				$queries[] = $wpdb->num_queries - $this->_queries_at_last_call;
 				$this->_query_running_time += $query[1];
@@ -95,8 +97,8 @@ class GO_Profiler
 		{
 			//had to change these to test, as WP_DEBUG sets error_reporting to E_ALL - page fills with warnings for functions w/o files
 			$backtrace_function = isset( $temp['function'] ) ? $temp['function'] : ' ';
-			$backtrace_file = isset( $temp['file'] ) ? sprintf( ' in %1$s()', $temp['file']) : ' ';
-			$backtrace_line = isset( $temp['line'] ) ? sprintf( ' at %1$s()', $temp['line']) : ' ';
+			$backtrace_file = isset( $temp['file'] ) ? sprintf( ' in %1$s()', $temp['file'] ) : ' ';
+			$backtrace_line = isset( $temp['line'] ) ? sprintf( ' at %1$s()', $temp['line'] ) : ' ';
 			$backtrace[] = $backtrace_function . $backtrace_line . $backtrace_file;
 		}//end foreach
 
@@ -105,7 +107,7 @@ class GO_Profiler
 			'hook'          => func_get_arg( 0 ), // the name of the current hook
 			'memory'        => memory_get_usage( FALSE ), // total script memory usage, in bytes
 			'runtime'       => $timenow - $timestart, // the total execution time, in seconds, to the start of the hook
-			'query_runtime' => $this->_query_running_time, // 
+			'query_runtime' => $this->_query_running_time, //
 			'query_count'   => $wpdb->num_queries,
 			'queries'       => (boolean) $queries ? $queries : NULL,
 			'backtrace'     => $backtrace,
@@ -120,32 +122,32 @@ class GO_Profiler
 	public function shutdown()
 	{
 		$delta_m = $delta_t = $delta_q = $hook = $hook_m = $hook_t = array();
-		foreach( $this->hooks as $k => $v )
+		foreach ( $this->hooks as $k => $v )
 		{
 			$delta_m[ $k ] = $v->memory - $this->hooks[ absint( $k - 1 ) ]->memory;
 			$delta_t[ $k ] = $v->runtime - $this->hooks[ absint( $k - 1 ) ]->runtime;
 			$delta_q[ $k ] = $v->query_runtime - $this->hooks[ absint( $k - 1 ) ]->query_runtime;
 
-			if( ! isset( $hook[ $v->hook ] ))
+			if ( ! isset( $hook[ $v->hook ] ) )
 			{
 				$hook[ $v->hook ] = 0;
 			}//end if
 			$hook[ $v->hook ]++;
 
-			if( ! isset( $hook_m[ $v->hook ] ))
+			if ( ! isset( $hook_m[ $v->hook ] ) )
 			{
 				$hook_m[ $v->hook ] = 0;
 			}//end if
 			$hook_m[ $v->hook ] += $delta_m[ $k ];
 
-			if( ! isset( $hook_t[ $v->hook ] ))
+			if ( ! isset( $hook_t[ $v->hook ] ) )
 			{
 				$hook_t[ $v->hook ] = 0;
 			}//end if
 			$hook_t[ $v->hook ] += $delta_t[ $k ];
 		}//end foreach
 
-		foreach( $this->hooks as $k => $v )
+		foreach ( $this->hooks as $k => $v )
 		{
 			$go_profile_hook_info[] = array(
 				'hook' => $v->hook,
@@ -162,7 +164,7 @@ class GO_Profiler
 		}//end foreach
 		$go_profile_total = $go_profile_max_mem = $go_profile_longest = $go_profile_popular = 0;
 
-		foreach( $hook as $k => $v )
+		foreach ( $hook as $k => $v )
 		{
 			$hook_mem = ( $hook_m[ $k ] / 1024 ) / 1024;
 			$go_profile_agg_hook[] = array(
@@ -179,13 +181,13 @@ class GO_Profiler
 				$go_profile_max_mem_name = $k;
 			}//end if
 
-			if( $hook_t[ $k ] > $go_profile_longest )
+			if ( $hook_t[ $k ] > $go_profile_longest )
 			{
 				$go_profile_longest = $hook_t[ $k ];
 				$go_profile_longest_name = $k;
 			}//end if
 
-			if( $v > $go_profile_popular )
+			if ( $v > $go_profile_popular )
 			{
 				$go_profile_popular = $v;
 				$go_profile_popular_name = $k;
@@ -214,12 +216,14 @@ class GO_Profiler
 
 /**
  * Singleton
+ *
+ * @global GO_Profiler $go_profiler
  */
 function go_profiler()
 {
 	global $go_profiler;
 
-	if( ! $go_profiler )
+	if ( ! $go_profiler )
 	{
 		$go_profiler = new GO_Profiler();
 	}//end if
