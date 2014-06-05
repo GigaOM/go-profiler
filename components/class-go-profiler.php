@@ -67,7 +67,7 @@ class GO_Profiler
 	 * hook
 	 *
 	 * @global wpdb $wpdb
-	 * @global ????? $timestart
+	 * @global int $timestart
 	 */
 	public function hook()
 	{
