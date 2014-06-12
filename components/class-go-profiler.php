@@ -17,7 +17,7 @@ class GO_Profiler
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 		add_filter( 'debug_bar_panels', array( $this, 'add_profiler_panels' ) );
 		register_shutdown_function( array( $this, 'shutdown' ) );
-	}//end construct
+	}//end __construct
 
 	/**
 	 * initialize
@@ -107,7 +107,7 @@ class GO_Profiler
 			'hook'          => func_get_arg( 0 ), // the name of the current hook
 			'memory'        => memory_get_usage( FALSE ), // total script memory usage, in bytes
 			'runtime'       => $timenow - $timestart, // the total execution time, in seconds, to the start of the hook
-			'query_runtime' => $this->_query_running_time, //
+			'query_runtime' => $this->_query_running_time,
 			'query_count'   => $wpdb->num_queries,
 			'queries'       => (boolean) $queries ? $queries : NULL,
 			'backtrace'     => $backtrace,
