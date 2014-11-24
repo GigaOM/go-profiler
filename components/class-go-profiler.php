@@ -11,12 +11,17 @@ class GO_Profiler
 	 */
 	public function __construct()
 	{
-		add_action( 'all', array( $this, 'hook' ), 11 ); //These go to eleven!
+		// behind the curtain: how we hook to every hook
+		// priority is a fairly large prime, Mersenne at that
+		// it really should be called at the very last thing for every hook
+		add_action( 'all', array( $this, 'hook' ), 2147483647 );
+		register_shutdown_function( array( $this, 'shutdown' ) );
+
+		// these display the profile info in the Debug bar
 		add_action( 'init', array( $this, 'init' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 		add_filter( 'debug_bar_panels', array( $this, 'debug_bar_panels' ) );
-		register_shutdown_function( array( $this, 'shutdown' ) );
 	}//end __construct
 
 	/**
@@ -70,7 +75,6 @@ class GO_Profiler
 	 */
 	public function hook()
 	{
-
 		global $wpdb, $timestart;
 		$timenow = microtime( TRUE );
 
@@ -120,6 +124,8 @@ class GO_Profiler
 	 */
 	public function shutdown()
 	{
+		// we'll have to iterate the hook log a few times
+		// the first is to initialize the metrics
 		$delta_m = $delta_t = $delta_q = $hook = $hook_m = $hook_t = array();
 		foreach ( $this->hooks as $k => $v )
 		{
@@ -146,9 +152,10 @@ class GO_Profiler
 			$hook_t[ $v->hook ] += $delta_t[ $k ];
 		}//end foreach
 
+		// now iterate to get the play-by-play hook transcript with metrics
 		foreach ( $this->hooks as $k => $v )
 		{
-			$go_profile_hook_info[] = array(
+			$hook_info[] = array(
 				'hook' => $v->hook,
 				'memory' => number_format( $v->memory / 1024 / 1024, 3 ),
 				'delta-m'   => number_format( $delta_m[ $k ] / 1024 / 1024, 3 ),
@@ -161,55 +168,55 @@ class GO_Profiler
 				'backtrace' => $v->backtrace,
 			);
 		}//end foreach
-		$go_profile_total = $go_profile_max_mem = $go_profile_longest = $go_profile_popular = 0;
+		$total = $max_mem = $longest = $popular = 0;
 
+		// and a final iteration to summarize it all
 		foreach ( $hook as $k => $v )
 		{
 			$hook_mem = ( $hook_m[ $k ] / 1024 ) / 1024;
-			$go_profile_agg_hook[] = array(
+			$agg_hook[] = array(
 				'hook'   => $k,
 				'calls'  => number_format( $v ),
 				'memory' => number_format( $hook_mem, 3 ),
 				'time'   => number_format( $hook_t[ $k ], 4 ),
 			);
-			$go_profile_total += $v;
+			$total += $v;
 
-			if ( $hook_mem > $go_profile_max_mem )
+			if ( $hook_mem > $max_mem )
 			{
-				$go_profile_max_mem = $hook_mem;
-				$go_profile_max_mem_name = $k;
+				$max_mem = $hook_mem;
+				$max_mem_name = $k;
 			}//end if
 
-			if ( $hook_t[ $k ] > $go_profile_longest )
+			if ( $hook_t[ $k ] > $longest )
 			{
-				$go_profile_longest = $hook_t[ $k ];
-				$go_profile_longest_name = $k;
+				$longest = $hook_t[ $k ];
+				$longest_name = $k;
 			}//end if
 
-			if ( $v > $go_profile_popular )
+			if ( $v > $popular )
 			{
-				$go_profile_popular = $v;
-				$go_profile_popular_name = $k;
+				$popular = $v;
+				$popular_name = $k;
 			}//end if
 		}//end foreach
-		$go_profile_summary = array(
-			'total_hooks'       => number_format( $go_profile_total ),
-			'max_mem'           => number_format( $go_profile_max_mem, 3 ),
-			'max_mem_name'      => $go_profile_max_mem_name,
-			'longest_hook'      => number_format( $go_profile_longest, 4 ),
-			'longest_hook_name' => $go_profile_longest_name,
-			'most_often'        => number_format( $go_profile_popular ),
-			'most_often_name'   => $go_profile_popular_name,
+
+		$summary = array(
+			'total_hooks'       => number_format( $total ),
+			'max_mem'           => number_format( $max_mem, 3 ),
+			'max_mem_name'      => $max_mem_name,
+			'longest_hook'      => number_format( $longest, 4 ),
+			'longest_hook_name' => $longest_name,
+			'most_often'        => number_format( $popular ),
+			'most_often_name'   => $popular_name,
 		);
 
 		$go_profiler_json = json_encode( array(
-			'summary'   => $go_profile_summary,
-			'hooks'     => $go_profile_hook_info,
-			'aggregate' => $go_profile_agg_hook,
+			'summary'   => $summary,
+			'hooks'     => $hook_info,
+			'aggregate' => $agg_hook,
 		) );
-		$go_profile_ret_json = "<script> ( function( $ ) { var go_profiler_data = '$go_profiler_json'; $(document).trigger( 'go-profiler-data-loaded', [ go_profiler_data ] ); })( jQuery ); </script>";
-
-		echo $go_profile_ret_json;
+		echo "<script> ( function( $ ) { var go_profiler_data = '$go_profiler_json'; $(document).trigger( 'go-profiler-data-loaded', [ go_profiler_data ] ); })( jQuery ); </script>";
 	}//end shutdown
 }//end class
 
