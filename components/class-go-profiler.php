@@ -15,7 +15,7 @@ class GO_Profiler
 		add_action( 'init', array( $this, 'init' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
-		add_filter( 'debug_bar_panels', array( $this, 'add_profiler_panels' ) );
+		add_filter( 'debug_bar_panels', array( $this, 'debug_bar_panels' ) );
 		register_shutdown_function( array( $this, 'shutdown' ) );
 	}//end __construct
 
@@ -45,9 +45,8 @@ class GO_Profiler
 	 * @param array $panels to add
 	 * @return $panels[] go_profiler_panel
 	 */
-	public function add_profiler_panels( $panels )
+	public function debug_bar_panels( $panels )
 	{
-
 		if ( ! class_exists( 'GO_Profiler_Hook_Panel' ) )
 		{
 			include __DIR__ . '/class-go-profiler-hook-panel.php';

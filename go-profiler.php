@@ -9,6 +9,7 @@ Author URI: http://maisonbisson.com/
 */
 
 // only load if WP_DEBUG is defined and TRUE
+// add a define( 'WP_DEBUG', TRUE ); to your wp-config.php or similar
 if (
 	! defined( 'WP_DEBUG' ) ||
 	! WP_DEBUG
