@@ -5,6 +5,27 @@
 		{{total}}
 	</h2>
 	<h2>
+		<span>Total memory</span>
+		{{popular_name}}
+		<span>{{popular}}</span>
+	</h2>
+	<h2>
+		<span>Total time</span>
+		{{popular_name}}
+		<span>{{popular}}</span>
+	</h2>
+	<h2>
+		<span>Total queries</span>
+		{{popular_name}}
+		<span>{{popular}}</span>
+	</h2>
+
+	<h2>
+		<span>Used most often</span>
+		{{popular_name}}
+		<span>{{popular}}</span>
+	</h2>
+	<h2>
 		<span>Most memory intensive</span>
 		{{max_mem_name}}
 		<span>{{max_mem}} MB</span>
@@ -15,9 +36,9 @@
 		<span>{{longest}} seconds</span>
 	</h2>
 	<h2>
-		<span>Used most often</span>
-		{{popular_name}}
-		<span>{{popular}}</span>
+		<span>Most queries</span>
+		{{longest_name}}
+		<span>{{longest}} seconds</span>
 	</h2>
 {{/summary}}
 </script>
@@ -32,22 +53,22 @@
 				{{memory}}
 			</td>
 			<td> 
-				{{delta-m}}
+				{{memory_delta}}
 			</td>
 			<td>
 				{{runtime}}
 			</td>
 			<td>
-				{{delta-r}}
+				{{runtime_delta}}
 			</td>
 			<td>
-				{{q-runtime}}
+				{{query_runtime}}
 			</td>
 			<td>
-				{{delta-q}}
+				{{query_delta}}
 			</td>
 			<td>
-				{{q-count}}
+				{{query_count}}
 			</td>
 			<td>
 				{{#queries}}

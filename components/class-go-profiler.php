@@ -124,7 +124,75 @@ class GO_Profiler
 	}//end hook
 
 	/**
-	 * summarize the hook transcript
+	 * get metrics for the hook transcript
+	 */
+	public function get_metrics( $transcript )
+	{
+
+/*
+total memory
+total time
+total queries
+hook with most queries
+*/
+
+		// we'll have to iterate the hook log a few times
+		// the first is to initialize the metrics
+		$delta_m = $delta_t = $delta_q = $hook = $hook_m = $hook_t = array();
+		foreach ( $transcript as $k => $v )
+		{
+			$delta_m[ $k ] = $v->memory - $this->hooks[ absint( $k - 1 ) ]->memory;
+			$delta_t[ $k ] = $v->runtime - $this->hooks[ absint( $k - 1 ) ]->runtime;
+			$delta_q[ $k ] = $v->query_runtime - $this->hooks[ absint( $k - 1 ) ]->query_runtime;
+
+			if ( ! isset( $hook[ $v->hook ] ) )
+			{
+				$hook[ $v->hook ] = 0;
+			}//end if
+			$hook[ $v->hook ]++;
+
+			if ( ! isset( $hook_m[ $v->hook ] ) )
+			{
+				$hook_m[ $v->hook ] = 0;
+			}//end if
+			$hook_m[ $v->hook ] += $delta_m[ $k ];
+
+			if ( ! isset( $hook_t[ $v->hook ] ) )
+			{
+				$hook_t[ $v->hook ] = 0;
+			}//end if
+			$hook_t[ $v->hook ] += $delta_t[ $k ];
+		}//end foreach
+
+		// now iterate to get the play-by-play hook transcript with metrics
+		foreach ( $transcript as $k => $v )
+		{
+			$transcript[ $k ] = (object) array(
+				'hook'      => $v->hook,
+				'memory'    => number_format( $v->memory / 1024 / 1024, 3 ),
+				'memory_delta'   => number_format( $delta_m[ $k ] / 1024 / 1024, 3 ),
+				'runtime'   => number_format( $v->runtime, 4 ),
+				'runtime_delta'   => number_format( $delta_t[ $k ], 4 ),
+				'query_runtime' => number_format( $v->query_runtime, 4 ),
+				'query_delta'   => number_format( $delta_q[ $k ], 4 ),
+				'query_count'   => $v->query_count,
+				'queries'   => $v->queries,
+				'backtrace' => $v->backtrace,
+			);
+		}//end foreach
+
+		// and a final iteration over the list of hooks to summarize them
+		$summary = $this->summarize_and_aggregate( $hook, $hook_m, $hook_t );
+
+		return (object) array(
+			'summary'    => $summary->summary,
+			'aggregate'  => $summary->aggregate,
+			'transcript' => $transcript,
+		);
+	}
+
+	/**
+	 * summarize the hook metrics
 	 */
 	public function summarize_and_aggregate( $hook, $hook_m, $hook_t )
 	{
@@ -179,33 +247,6 @@ class GO_Profiler
 	 */
 	public function shutdown()
 	{
-		// we'll have to iterate the hook log a few times
-		// the first is to initialize the metrics
-		$delta_m = $delta_t = $delta_q = $hook = $hook_m = $hook_t = array();
-		foreach ( $this->hooks as $k => $v )
-		{
-			$delta_m[ $k ] = $v->memory - $this->hooks[ absint( $k - 1 ) ]->memory;
-			$delta_t[ $k ] = $v->runtime - $this->hooks[ absint( $k - 1 ) ]->runtime;
-			$delta_q[ $k ] = $v->query_runtime - $this->hooks[ absint( $k - 1 ) ]->query_runtime;
-
-			if ( ! isset( $hook[ $v->hook ] ) )
-			{
-				$hook[ $v->hook ] = 0;
-			}//end if
-			$hook[ $v->hook ]++;
-
-			if ( ! isset( $hook_m[ $v->hook ] ) )
-			{
-				$hook_m[ $v->hook ] = 0;
-			}//end if
-			$hook_m[ $v->hook ] += $delta_m[ $k ];
-
-			if ( ! isset( $hook_t[ $v->hook ] ) )
-			{
-				$hook_t[ $v->hook ] = 0;
-			}//end if
-			$hook_t[ $v->hook ] += $delta_t[ $k ];
-		}//end foreach
 
 		// we're going to split the hook call transcript into epochs
 		// this just preps the vars, the splitting is done on the next iteration
@@ -221,8 +262,8 @@ class GO_Profiler
 			'template_redirect',
 		);
 
-		// now iterate to get the play-by-play hook transcript with metrics
-		// ...and the transcript by epoch
+		// we'll have to iterate the hook log a few times
+		// start by iteratating to get the transcript by epoch
 		foreach ( $this->hooks as $k => $v )
 		{
 			// is it time to shift epochs? 
@@ -232,27 +273,19 @@ class GO_Profiler
 				$epoch->$epoch_current = array();
 			}
 
-			$transcript[] = $epoch->{$epoch_current}[] = array(
-				'hook'      => $v->hook,
-				'memory'    => number_format( $v->memory / 1024 / 1024, 3 ),
-				'delta-m'   => number_format( $delta_m[ $k ] / 1024 / 1024, 3 ),
-				'runtime'   => number_format( $v->runtime, 4 ),
-				'delta-r'   => number_format( $delta_t[ $k ], 4 ),
-				'q-runtime' => number_format( $v->query_runtime, 4 ),
-				'delta-q'   => number_format( $delta_q[ $k ], 4 ),
-				'q-count'   => $v->query_count,
-				'queries'   => $v->queries,
-				'backtrace' => $v->backtrace,
-			);
+			$epoch->{$epoch_current}[ $k ] = (object) $v;
 		}//end foreach
 
-		// and a final iteration over the list of hooks to summarize them
-		$summary = $this->summarize_and_aggregate( $hook, $hook_m, $hook_t );
+		// now iterate through the epochs to get details
+		foreach ( (array) $epoch as $k => $v )
+		{
+			$epoch->$k = $this->get_metrics( $v );
+		}
 
 		$go_profiler_json = json_encode( array(
-			'summary'     => $summary->summary,
-			'aggregate'   => $summary->aggregate,
-			'transcript'  => $transcript,
+			'summary'     => $epoch->startup->summary,
+			'aggregate'   => $epoch->startup->aggregate,
+			'transcript'  => $epoch->startup->transcript,
 		) );
 
 		// @TODO: this should maybe be moved to a localize_script() call and the JS refactored to not require the $(document).trigger(...)
