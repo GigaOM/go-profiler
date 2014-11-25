@@ -18,30 +18,32 @@ class GO_Profiler
 		register_shutdown_function( array( $this, 'shutdown' ) );
 
 		// these display the profile info in the Debug bar
-		add_action( 'init', array( $this, 'init' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 		add_filter( 'debug_bar_panels', array( $this, 'debug_bar_panels' ) );
 	}//end __construct
 
 	/**
-	 * initialize
-	 */
-	public function init()
-	{
-		wp_register_script( 'mustache', plugins_url( 'js/external/mustache.min.js', __FILE__ ), false, false, true );
-		wp_register_script( 'go-profiler', plugins_url( 'js/go-profiler.js', __FILE__ ), array( 'mustache', 'jquery' ), false, true );
-		wp_register_style( 'go-profiler', plugins_url( 'css/go-profiler.css', __FILE__ ), false, false, 'all' );
-	}//end init
-
-	/**
 	 * enqueue scripts
 	 */
 	public function enqueue_scripts()
 	{
-		wp_enqueue_script( 'mustache' );
-		wp_enqueue_script( 'go-profiler' );
-		wp_enqueue_style( 'go-profiler' );
+		// only continue if we're in a context where the debug bar is showing
+		// and if not, then remove our tracking hook for performance
+		if (
+			! is_super_admin() ||
+			! is_admin_bar_showing() ||
+			! is_object( $GLOBALS['debug_bar'] ) ||
+			$GLOBALS['debug_bar']->is_wp_login()
+		)
+		{
+			remove_action( 'all', array( $this, 'hook' ), 2147483647 );
+			return;
+		}
+
+		wp_enqueue_script( 'mustache', plugins_url( 'js/external/mustache.min.js', __FILE__ ), FALSE, FALSE, TRUE );
+		wp_enqueue_script( 'go-profiler', plugins_url( 'js/go-profiler.js', __FILE__ ), array( 'mustache', 'jquery' ), FALSE, TRUE );
+		wp_enqueue_style( 'go-profiler', plugins_url( 'css/go-profiler.css', __FILE__ ), FALSE, FALSE, 'all' );
 	}//end enqueue_scripts
 
 	/**
