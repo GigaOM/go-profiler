@@ -124,12 +124,52 @@ class GO_Profiler
 	}//end hook
 
 	/**
-	 * shutdown hooks
+	 * summarize the hook transcript
 	 */
 	public function summarize( $transcript )
 	{
-		//asdasdasd
-		// asdasd
+		// and a final iteration to summarize it all
+		$summary = (object) array();
+		$summary->aggregate = array();
+		$summary->total = $summary->max_mem = $summary->longest = $summary->popular = 0;
+		foreach ( $transcript as $k => $v )
+		{
+			$hook_mem = ( $hook_m[ $k ] / 1024 ) / 1024;
+			$summary->aggregate[] = array(
+				'hook'   => $k,
+				'calls'  => number_format( $v ),
+				'memory' => number_format( $hook_mem, 3 ),
+				'time'   => number_format( $hook_t[ $k ], 4 ),
+			);
+			$summary->total += $v;
+
+			if ( $hook_mem > $summary->max_mem )
+			{
+				$summary->max_mem = $hook_mem;
+				$summary->max_mem_name = $k;
+			}//end if
+
+			if ( $hook_t[ $k ] > $summary->longest )
+			{
+				$summary->longest = $hook_t[ $k ];
+				$summary->longest_name = $k;
+			}//end if
+
+			if ( $v > $summary->popular )
+			{
+				$summary->popular = $v;
+				$summary->popular_name = $k;
+			}//end if
+		}//end foreach
+
+		// format the numbers
+		// @TODO: should we format the numbers in JS rather than here?
+		$summary->total   = number_format( $summary->total );
+		$summary->max_mem = number_format( $summary->max_mem, 3 );
+		$summary->longest = number_format( $summary->longest, 4 );
+		$summary->popular = number_format( $summary->popular );
+
+		return $summary;
 	}
 
 	/**
@@ -204,6 +244,7 @@ class GO_Profiler
 			);
 		}//end foreach
 
+/*
 		// and a final iteration to summarize it all
 		$total = $max_mem = $longest = $popular = 0;
 		foreach ( $hook as $k => $v )
@@ -245,9 +286,10 @@ class GO_Profiler
 			'most_often'        => number_format( $popular ),
 			'most_often_name'   => $popular_name,
 		);
+*/
 
 		$go_profiler_json = json_encode( array(
-			'summary'     => $summary,
+			'summary'     => $this->summary( $hook ),
 			'aggregate'   => $agg_hook,
 			'transcript'  => $transcript,
 		) );

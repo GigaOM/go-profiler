@@ -2,7 +2,7 @@
 {{#summary}}
 	<h2>
 		<span>Total hooks</span>
-		{{total_hooks}}
+		{{total}}
 	</h2>
 	<h2>
 		<span>Most memory intensive</span>
@@ -11,13 +11,13 @@
 	</h2>
 	<h2>
 		<span>Longest running</span>
-		{{longest_hook_name}}
-		<span>{{longest_hook}} seconds</span>
+		{{longest_name}}
+		<span>{{longest}} seconds</span>
 	</h2>
 	<h2>
 		<span>Used most often</span>
-		{{most_often_name}}
-		<span>{{most_often}}</span>
+		{{popular_name}}
+		<span>{{popular}}</span>
 	</h2>
 {{/summary}}
 </script>
