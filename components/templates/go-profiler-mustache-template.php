@@ -1,21 +1,21 @@
 <script id='go-profiler-summary-tpl' type='text/mustache'>
 {{#summary}}
 	<h2>
-		<span>TOTAL HOOKS</span>
+		<span>Total hooks</span>
 		{{total_hooks}}
 	</h2>
 	<h2>
-		<span>MOST MEMORY INTENSIVE</span>
+		<span>Most memory intensive</span>
 		{{max_mem_name}}
 		<span>{{max_mem}} MB</span>
 	</h2>
 	<h2>
-		<span>LONGEST RUNNING</span>
+		<span>Longest running</span>
 		{{longest_hook_name}}
 		<span>{{longest_hook}} seconds</span>
 	</h2>
 	<h2>
-		<span>USED MOST OFTEN</span>
+		<span>Used most often</span>
 		{{most_often_name}}
 		<span>{{most_often}}</span>
 	</h2>
@@ -23,7 +23,7 @@
 </script>
 
 <script id='go-profiler-hook-tpl' type='text/mustache' >
-	{{#hooks}}
+	{{#transcript}}
 		<tr>
 			<td>
 				{{hook}}
@@ -59,7 +59,7 @@
 				{{#backtrace}} {{.}} <br/> {{/backtrace}}
 			</td>
 		</tr>
-	{{/hooks}}
+	{{/transcript}}
 </script>
 
 <script id='go-profiler-aggregate-tpl' type='text/mustache' >

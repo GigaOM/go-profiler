@@ -126,6 +126,15 @@ class GO_Profiler
 	/**
 	 * shutdown hooks
 	 */
+	public function summarize( $transcript )
+	{
+		//asdasdasd
+		// asdasd
+	}
+
+	/**
+	 * shutdown hooks
+	 */
 	public function shutdown()
 	{
 		// we'll have to iterate the hook log a few times
@@ -156,12 +165,34 @@ class GO_Profiler
 			$hook_t[ $v->hook ] += $delta_t[ $k ];
 		}//end foreach
 
+		// we're going to split the hook call transcript into epochs
+		// this just preps the vars, the splitting is done on the next iteration
+		// - startup to init
+		// - init to template_redirect
+		// - template_redirect to shutdown
+		$epoch = (object) array(
+			'startup' => array(),
+		);
+		$epoch_current = 'startup';
+		$next_epoch = array(
+			'init',
+			'template_redirect',
+		);
+
 		// now iterate to get the play-by-play hook transcript with metrics
-		foreach ( $this->hooks as $k => $v )
+		// ...and the transcript by epoch
+		foreach ( $hook as $k => $v )
 		{
-			$hook_info[] = array(
-				'hook' => $v->hook,
-				'memory' => number_format( $v->memory / 1024 / 1024, 3 ),
+			// is it time to shift epochs? 
+			if ( current( $next_epoch ) == $v->hook )
+			{
+				$epoch_current = array_shift( $next_epoch );
+				$epoch->$epoch_current = array();
+			}
+
+			$transcript[] = $epoch->{$epoch_current}[] = array(
+				'hook'      => $v->hook,
+				'memory'    => number_format( $v->memory / 1024 / 1024, 3 ),
 				'delta-m'   => number_format( $delta_m[ $k ] / 1024 / 1024, 3 ),
 				'runtime'   => number_format( $v->runtime, 4 ),
 				'delta-r'   => number_format( $delta_t[ $k ], 4 ),
@@ -172,9 +203,9 @@ class GO_Profiler
 				'backtrace' => $v->backtrace,
 			);
 		}//end foreach
-		$total = $max_mem = $longest = $popular = 0;
 
 		// and a final iteration to summarize it all
+		$total = $max_mem = $longest = $popular = 0;
 		foreach ( $hook as $k => $v )
 		{
 			$hook_mem = ( $hook_m[ $k ] / 1024 ) / 1024;
@@ -216,13 +247,13 @@ class GO_Profiler
 		);
 
 		$go_profiler_json = json_encode( array(
-			'summary'   => $summary,
-			'hooks'     => $hook_info,
-			'aggregate' => $agg_hook,
+			'summary'     => $summary,
+			'aggregate'   => $agg_hook,
+			'transcript'  => $transcript,
 		) );
 
-		// $go_profiler_json is escaped with json_encode() just above
 		// @TODO: this should maybe be moved to a localize_script() call and the JS refactored to not require the $(document).trigger(...)
+		// $go_profiler_json is escaped with json_encode() just above
 		echo "<script> ( function( $ ) { var go_profiler_data = '$go_profiler_json'; $(document).trigger( 'go-profiler-data-loaded', [ go_profiler_data ] ); })( jQuery ); </script>";
 	}//end shutdown
 }//end class
