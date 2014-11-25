@@ -128,22 +128,28 @@ class GO_Profiler
 	 */
 	public function get_metrics( $transcript )
 	{
-
-/*
-total memory
-total time
-total queries
-hook with most queries
-*/
-
 		// we'll have to iterate the hook log a few times
 		// the first is to initialize the metrics
-		$delta_m = $delta_t = $delta_q = $hook = $hook_m = $hook_t = array();
+		$delta_m = $delta_t = $delta_q = $hook = $hook_m = $hook_t = $hook_q = array();
 		foreach ( $transcript as $k => $v )
 		{
-			$delta_m[ $k ] = $v->memory - $this->hooks[ absint( $k - 1 ) ]->memory;
-			$delta_t[ $k ] = $v->runtime - $this->hooks[ absint( $k - 1 ) ]->runtime;
-			$delta_q[ $k ] = $v->query_runtime - $this->hooks[ absint( $k - 1 ) ]->query_runtime;
+			if ( 0 === $k )
+			{
+				$delta_m[ $k ] = 0;
+				$overhead_m = $transcript[0]->memory;
+
+				$delta_t[ $k ] = 0;
+				$overhead_t = $transcript[0]->runtime;
+
+				$delta_q[ $k ] = 0;
+				$overhead_q = $transcript[0]->query_runtime;
+			}
+			else
+			{
+				$delta_m[ $k ] = $v->memory        - $transcript[ $k - 1 ]->memory;
+				$delta_t[ $k ] = $v->runtime       - $transcript[ $k - 1 ]->runtime;
+				$delta_q[ $k ] = $v->query_runtime - $transcript[ $k - 1 ]->query_runtime;
+			}
 
 			if ( ! isset( $hook[ $v->hook ] ) )
 			{
@@ -162,6 +168,12 @@ hook with most queries
 				$hook_t[ $v->hook ] = 0;
 			}//end if
 			$hook_t[ $v->hook ] += $delta_t[ $k ];
+
+			if ( ! isset( $hook_q[ $v->hook ] ) )
+			{
+				$hook_q[ $v->hook ] = 0;
+			}//end if
+			$hook_q[ $v->hook ] += $delta_q[ $k ];
 		}//end foreach
 
 		// now iterate to get the play-by-play hook transcript with metrics
@@ -182,62 +194,81 @@ hook with most queries
 		}//end foreach
 
 		// and a final iteration over the list of hooks to summarize them
-		$summary = $this->summarize_and_aggregate( $hook, $hook_m, $hook_t );
+		$summary = $this->summarize_and_aggregate( $hook, $hook_m, $hook_t, $hook_q );
 
-		return (object) array(
+		$return = (object) array(
 			'summary'    => $summary->summary,
 			'aggregate'  => $summary->aggregate,
 			'transcript' => $transcript,
+			'overhead'   => (object) array(
+				'memory'        => $overhead_m,
+				'runtime'       => $overhead_t,
+				'query_runtime' => $overhead_q,
+			),
 		);
-	}
+
+		$return->summary->total_memory = number_format( array_sum( $delta_m ) / 1024 / 1024, 3 );
+		$return->summary->total_time = number_format( array_sum( $delta_t ), 4 );
+		$return->summary->total_querytime = number_format( array_sum( $delta_q ), 4 );
+
+		return $return;
+	}//end get_metrics
 
 	/**
 	 * summarize the hook metrics
 	 */
-	public function summarize_and_aggregate( $hook, $hook_m, $hook_t )
+	public function summarize_and_aggregate( $hook, $hook_m, $hook_t, $hook_q )
 	{
 		// and a final iteration to summarize it all
 		$return = (object) array(
 			'summary' => (object) array(),
 			'aggregate' => array(),
 		);
-		$return->summary->total = $return->summary->max_mem = $return->summary->longest = $return->summary->popular = 0;
+		$return->summary->total_hooks = $return->summary->most_popular = $return->summary->most_memory = $return->summary->most_time = $return->summary->most_querytime = 0;
 		foreach ( $hook as $k => $v )
 		{
 			$hook_mem = ( $hook_m[ $k ] / 1024 ) / 1024;
 			$return->aggregate[] = array(
-				'hook'   => $k,
-				'calls'  => number_format( $v ),
-				'memory' => number_format( $hook_mem, 3 ),
-				'time'   => number_format( $hook_t[ $k ], 4 ),
+				'hook'      => $k,
+				'calls'     => number_format( $v ),
+				'memory'    => number_format( $hook_mem, 3 ),
+				'time'      => number_format( $hook_t[ $k ], 4 ),
+				'querytime' => number_format( $hook_q[ $k ], 4 ),
 			);
-			$return->summary->total += $v;
+			$return->summary->total_hooks += $v;
 
-			if ( $hook_mem > $return->summary->max_mem )
+			if ( $v > $return->summary->most_popular )
 			{
-				$return->summary->max_mem = $hook_mem;
-				$return->summary->max_mem_name = $k;
+				$return->summary->most_popular = $v;
+				$return->summary->most_popular_name = $k;
 			}//end if
 
-			if ( $hook_t[ $k ] > $return->summary->longest )
+			if ( $hook_mem > $return->summary->most_memory )
 			{
-				$return->summary->longest = $hook_t[ $k ];
-				$return->summary->longest_name = $k;
+				$return->summary->most_memory = $hook_mem;
+				$return->summary->most_memory_name = $k;
 			}//end if
 
-			if ( $v > $return->summary->popular )
+			if ( $hook_t[ $k ] > $return->summary->most_time )
 			{
-				$return->summary->popular = $v;
-				$return->summary->popular_name = $k;
+				$return->summary->most_time = $hook_t[ $k ];
+				$return->summary->most_time_name = $k;
+			}//end if
+
+			if ( $hook_q[ $k ] > $return->summary->most_querytime )
+			{
+				$return->summary->most_querytime = $v;
+				$return->summary->most_querytime_name = $k;
 			}//end if
 		}//end foreach
 
 		// format the numbers
 		// @TODO: should we format the numbers in JS rather than here?
-		$return->summary->total   = number_format( $return->summary->total );
-		$return->summary->max_mem = number_format( $return->summary->max_mem, 3 );
-		$return->summary->longest = number_format( $return->summary->longest, 4 );
-		$return->summary->popular = number_format( $return->summary->popular );
+		$return->summary->total_hooks   = number_format( $return->summary->total_hooks );
+		$return->summary->most_popular = number_format( $return->summary->most_popular );
+		$return->summary->most_memory = number_format( $return->summary->most_memory, 3 );
+		$return->summary->most_time = number_format( $return->summary->most_time, 4 );
+		$return->summary->most_querytime = number_format( $return->summary->most_querytime, 4 );
 
 		return $return;
 	}
@@ -264,16 +295,16 @@ hook with most queries
 
 		// we'll have to iterate the hook log a few times
 		// start by iteratating to get the transcript by epoch
-		foreach ( $this->hooks as $k => $v )
+		foreach ( $this->hooks as $v )
 		{
-			// is it time to shift epochs? 
+			// is it time to shift epochs?
 			if ( current( $next_epoch ) == $v->hook )
 			{
 				$epoch_current = array_shift( $next_epoch );
 				$epoch->$epoch_current = array();
 			}
 
-			$epoch->{$epoch_current}[ $k ] = (object) $v;
+			$epoch->{$epoch_current}[ ] = (object) $v;
 		}//end foreach
 
 		// now iterate through the epochs to get details
@@ -282,10 +313,12 @@ hook with most queries
 			$epoch->$k = $this->get_metrics( $v );
 		}
 
+print_r( $epoch->template_redirect );
+
 		$go_profiler_json = json_encode( array(
-			'summary'     => $epoch->startup->summary,
-			'aggregate'   => $epoch->startup->aggregate,
-			'transcript'  => $epoch->startup->transcript,
+			'summary'     => $epoch->init->summary,
+			'aggregate'   => $epoch->init->aggregate,
+			'transcript'  => $epoch->init->transcript,
 		) );
 
 		// @TODO: this should maybe be moved to a localize_script() call and the JS refactored to not require the $(document).trigger(...)

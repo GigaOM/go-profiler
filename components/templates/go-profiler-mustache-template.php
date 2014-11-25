@@ -2,48 +2,45 @@
 {{#summary}}
 	<h2>
 		<span>Total hooks</span>
-		{{total}}
+		{{total_hooks}}
 	</h2>
 	<h2>
 		<span>Total memory</span>
-		{{popular_name}}
-		<span>{{popular}}</span>
+		<span>{{total_memory}}</span>
 	</h2>
 	<h2>
 		<span>Total time</span>
-		{{popular_name}}
-		<span>{{popular}}</span>
+		<span>{{total_time}}</span>
 	</h2>
 	<h2>
-		<span>Total queries</span>
-		{{popular_name}}
-		<span>{{popular}}</span>
+		<span>Total query time</span>
+		<span>{{total_querytime}}</span>
 	</h2>
 
 	<h2>
 		<span>Used most often</span>
-		{{popular_name}}
-		<span>{{popular}}</span>
+		{{most_popular_name}}
+		<span>{{most_popular}}</span>
 	</h2>
 	<h2>
 		<span>Most memory intensive</span>
-		{{max_mem_name}}
-		<span>{{max_mem}} MB</span>
+		{{most_memory_name}}
+		<span>{{most_memory}} MB</span>
 	</h2>
 	<h2>
 		<span>Longest running</span>
-		{{longest_name}}
-		<span>{{longest}} seconds</span>
+		{{most_time_name}}
+		<span>{{most_time}} seconds</span>
 	</h2>
 	<h2>
-		<span>Most queries</span>
-		{{longest_name}}
-		<span>{{longest}} seconds</span>
+		<span>Longest queries</span>
+		{{lmost_querytime_name}}
+		<span>{{most_querytime}} seconds</span>
 	</h2>
 {{/summary}}
 </script>
 
-<script id='go-profiler-hook-tpl' type='text/mustache' >
+<script id='go-profiler-transcript-tpl' type='text/mustache' >
 	{{#transcript}}
 		<tr>
 			<td>
@@ -52,7 +49,7 @@
 			<td>
 				{{memory}}
 			</td>
-			<td> 
+			<td>
 				{{memory_delta}}
 			</td>
 			<td>
@@ -72,7 +69,7 @@
 			</td>
 			<td>
 				{{#queries}}
-				{{.}} 
+				{{.}}
 				{{/queries}}
 				</ul>
 			</td>
@@ -84,8 +81,8 @@
 </script>
 
 <script id='go-profiler-aggregate-tpl' type='text/mustache' >
-	{{#aggregate}} 
-		<tr> 
+	{{#aggregate}}
+		<tr>
 			<td>
 				{{hook}}
 			</td>
@@ -95,8 +92,11 @@
 			<td>
 				{{memory}}
 			</td>
-			<td> 
+			<td>
 				{{time}}
+			</td>
+			<td>
+				{{querytime}}
 			</td>
 		</tr>
 	{{/aggregate}}

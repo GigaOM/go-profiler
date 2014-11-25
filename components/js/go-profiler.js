@@ -7,7 +7,7 @@
 				var go_profiler_summary_row = Mustache.render( $( '#go-profiler-summary-tpl' ).html(), profiler_data );
 				$( "#debug-menu-target-GO_Profiler_Hook_Panel" ).prepend( go_profiler_summary_row );
 				$( "#debug-menu-target-GO_Profiler_Aggregate_Panel" ).prepend( go_profiler_summary_row );
-				var $go_profiler_hook_rows = Mustache.render( $( '#go-profiler-hook-tpl' ).html(), profiler_data );
+				var $go_profiler_hook_rows = Mustache.render( $( '#go-profiler-transcript-tpl' ).html(), profiler_data );
 				$( "#debug-hook-table > tbody:last" ).append( $go_profiler_hook_rows );
 				var $go_profiler_aggregate_rows = Mustache.render( $( '#go-profiler-aggregate-tpl' ).html(), profiler_data );
 				$( "#debug-aggregate-table > tbody:last" ).append( $go_profiler_aggregate_rows );
