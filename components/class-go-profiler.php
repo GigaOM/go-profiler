@@ -18,7 +18,7 @@ class GO_Profiler
 		register_shutdown_function( array( $this, 'shutdown' ) );
 
 		// these display the profile info in the Debug bar
-		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
+		add_action( 'wp_enqueue_scripts', array( $this, 'wp_enqueue_scripts' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 		add_filter( 'debug_bar_panels', array( $this, 'debug_bar_panels' ) );
 	}//end __construct
@@ -26,7 +26,7 @@ class GO_Profiler
 	/**
 	 * enqueue scripts
 	 */
-	public function enqueue_scripts()
+	public function wp_enqueue_scripts()
 	{
 		// only continue if we're in a context where the debug bar is showing
 		// and if not, then remove our tracking hook for performance
@@ -41,10 +41,12 @@ class GO_Profiler
 			return;
 		}
 
+		// @TODO: is either mustache or handlebars provided elsewhere in WP? ...perhaps not.
+		// @TODO: mustache is definitely provided in https://github.com/GigaOM/go-ui/tree/master/components/js/lib/external
 		wp_enqueue_script( 'mustache', plugins_url( 'js/external/mustache.min.js', __FILE__ ), FALSE, FALSE, TRUE );
 		wp_enqueue_script( 'go-profiler', plugins_url( 'js/go-profiler.js', __FILE__ ), array( 'mustache', 'jquery' ), FALSE, TRUE );
 		wp_enqueue_style( 'go-profiler', plugins_url( 'css/go-profiler.css', __FILE__ ), FALSE, FALSE, 'all' );
-	}//end enqueue_scripts
+	}//end wp_enqueue_scripts
 
 	/**
 	 * add profiler panels
@@ -67,7 +69,7 @@ class GO_Profiler
 		}//end if
 
 		return $panels;
-	}//end add_profiler_panels
+	}//end debug_bar_panels
 
 	/**
 	 * hook
@@ -218,6 +220,9 @@ class GO_Profiler
 			'hooks'     => $hook_info,
 			'aggregate' => $agg_hook,
 		) );
+
+		// $go_profiler_json is escaped with json_encode() just above
+		// @TODO: this should maybe be moved to a localize_script() call and the JS refactored to not require the $(document).trigger(...)
 		echo "<script> ( function( $ ) { var go_profiler_data = '$go_profiler_json'; $(document).trigger( 'go-profiler-data-loaded', [ go_profiler_data ] ); })( jQuery ); </script>";
 	}//end shutdown
 }//end class
