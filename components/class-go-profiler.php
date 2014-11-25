@@ -126,50 +126,52 @@ class GO_Profiler
 	/**
 	 * summarize the hook transcript
 	 */
-	public function summarize( $transcript )
+	public function summarize_and_aggregate( $hook, $hook_m, $hook_t )
 	{
 		// and a final iteration to summarize it all
-		$summary = (object) array();
-		$summary->aggregate = array();
-		$summary->total = $summary->max_mem = $summary->longest = $summary->popular = 0;
-		foreach ( $transcript as $k => $v )
+		$return = (object) array(
+			'summary' => (object) array(),
+			'aggregate' => array(),
+		);
+		$return->summary->total = $return->summary->max_mem = $return->summary->longest = $return->summary->popular = 0;
+		foreach ( $hook as $k => $v )
 		{
 			$hook_mem = ( $hook_m[ $k ] / 1024 ) / 1024;
-			$summary->aggregate[] = array(
+			$return->aggregate[] = array(
 				'hook'   => $k,
 				'calls'  => number_format( $v ),
 				'memory' => number_format( $hook_mem, 3 ),
 				'time'   => number_format( $hook_t[ $k ], 4 ),
 			);
-			$summary->total += $v;
+			$return->summary->total += $v;
 
-			if ( $hook_mem > $summary->max_mem )
+			if ( $hook_mem > $return->summary->max_mem )
 			{
-				$summary->max_mem = $hook_mem;
-				$summary->max_mem_name = $k;
+				$return->summary->max_mem = $hook_mem;
+				$return->summary->max_mem_name = $k;
 			}//end if
 
-			if ( $hook_t[ $k ] > $summary->longest )
+			if ( $hook_t[ $k ] > $return->summary->longest )
 			{
-				$summary->longest = $hook_t[ $k ];
-				$summary->longest_name = $k;
+				$return->summary->longest = $hook_t[ $k ];
+				$return->summary->longest_name = $k;
 			}//end if
 
-			if ( $v > $summary->popular )
+			if ( $v > $return->summary->popular )
 			{
-				$summary->popular = $v;
-				$summary->popular_name = $k;
+				$return->summary->popular = $v;
+				$return->summary->popular_name = $k;
 			}//end if
 		}//end foreach
 
 		// format the numbers
 		// @TODO: should we format the numbers in JS rather than here?
-		$summary->total   = number_format( $summary->total );
-		$summary->max_mem = number_format( $summary->max_mem, 3 );
-		$summary->longest = number_format( $summary->longest, 4 );
-		$summary->popular = number_format( $summary->popular );
+		$return->summary->total   = number_format( $return->summary->total );
+		$return->summary->max_mem = number_format( $return->summary->max_mem, 3 );
+		$return->summary->longest = number_format( $return->summary->longest, 4 );
+		$return->summary->popular = number_format( $return->summary->popular );
 
-		return $summary;
+		return $return;
 	}
 
 	/**
@@ -221,7 +223,7 @@ class GO_Profiler
 
 		// now iterate to get the play-by-play hook transcript with metrics
 		// ...and the transcript by epoch
-		foreach ( $hook as $k => $v )
+		foreach ( $this->hooks as $k => $v )
 		{
 			// is it time to shift epochs? 
 			if ( current( $next_epoch ) == $v->hook )
@@ -244,53 +246,12 @@ class GO_Profiler
 			);
 		}//end foreach
 
-/*
-		// and a final iteration to summarize it all
-		$total = $max_mem = $longest = $popular = 0;
-		foreach ( $hook as $k => $v )
-		{
-			$hook_mem = ( $hook_m[ $k ] / 1024 ) / 1024;
-			$agg_hook[] = array(
-				'hook'   => $k,
-				'calls'  => number_format( $v ),
-				'memory' => number_format( $hook_mem, 3 ),
-				'time'   => number_format( $hook_t[ $k ], 4 ),
-			);
-			$total += $v;
-
-			if ( $hook_mem > $max_mem )
-			{
-				$max_mem = $hook_mem;
-				$max_mem_name = $k;
-			}//end if
-
-			if ( $hook_t[ $k ] > $longest )
-			{
-				$longest = $hook_t[ $k ];
-				$longest_name = $k;
-			}//end if
-
-			if ( $v > $popular )
-			{
-				$popular = $v;
-				$popular_name = $k;
-			}//end if
-		}//end foreach
-
-		$summary = array(
-			'total_hooks'       => number_format( $total ),
-			'max_mem'           => number_format( $max_mem, 3 ),
-			'max_mem_name'      => $max_mem_name,
-			'longest_hook'      => number_format( $longest, 4 ),
-			'longest_hook_name' => $longest_name,
-			'most_often'        => number_format( $popular ),
-			'most_often_name'   => $popular_name,
-		);
-*/
+		// and a final iteration over the list of hooks to summarize them
+		$summary = $this->summarize_and_aggregate( $hook, $hook_m, $hook_t );
 
 		$go_profiler_json = json_encode( array(
-			'summary'     => $this->summary( $hook ),
-			'aggregate'   => $agg_hook,
+			'summary'     => $summary->summary,
+			'aggregate'   => $summary->aggregate,
 			'transcript'  => $transcript,
 		) );
 
