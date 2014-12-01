@@ -8,13 +8,13 @@
 				}
 
 				var go_profiler_summary_row = Mustache.render( $( '#go-profiler-summary-tpl' ).html(), go_profiler_data[ k ] );
-				$( '#go-profiler-debugbar-summary-table-' + k ).append( go_profiler_summary_row );
+				$( '#go-profiler-debugbar-summary-tab-' + k ).append( go_profiler_summary_row );
 
-				var go_profiler_aggregate_rows = Mustache.render( $( '#go-profiler-aggregate-tpl' ).html(), go_profiler_data[ k ] );
-				$( '#go-profiler-debugbar-aggregate-table-' + k + ' > tbody:last' ).append( go_profiler_aggregate_rows );
+//				var go_profiler_aggregate_rows = Mustache.render( $( '#go-profiler-aggregate-tpl' ).html(), go_profiler_data[ k ] );
+//				$( '#go-profiler-debugbar-aggregate-table-' + k + ' > tbody:last' ).append( go_profiler_aggregate_rows );
 
-				var go_profiler_hook_rows = Mustache.render( $( '#go-profiler-transcript-tpl' ).html(), go_profiler_data[ k ] );
-				$( '#go-profiler-debugbar-transcript-table-' + k + ' > tbody:last' ).append( go_profiler_hook_rows );
+//				var go_profiler_hook_rows = Mustache.render( $( '#go-profiler-transcript-tpl' ).html(), go_profiler_data[ k ] );
+//				$( '#go-profiler-debugbar-transcript-table-' + k + ' > tbody:last' ).append( go_profiler_hook_rows );
 			}
 		});
 	}

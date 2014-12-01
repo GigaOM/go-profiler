@@ -49,7 +49,7 @@ class GO_Profiler
 		// @TODO: is either mustache or handlebars provided elsewhere in WP? ...perhaps not.
 		// @TODO: mustache is definitely provided in https://github.com/GigaOM/go-ui/tree/master/components/js/lib/external
 		wp_enqueue_script( 'mustache', plugins_url( 'js/external/mustache.min.js', __FILE__ ), FALSE, FALSE, TRUE );
-		wp_enqueue_script( 'go-profiler', plugins_url( 'js/go-profiler.js', __FILE__ ), array( 'mustache', 'jquery' ), FALSE, TRUE );
+		wp_enqueue_script( 'go-profiler', plugins_url( 'js/go-profiler.js', __FILE__ ), array( 'mustache', 'jquery', 'jquery-ui-tabs' ), FALSE, TRUE );
 		wp_enqueue_style( 'go-profiler', plugins_url( 'css/go-profiler.css', __FILE__ ), FALSE, FALSE, 'all' );
 	}//end wp_enqueue_scripts
 
