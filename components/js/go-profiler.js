@@ -2,6 +2,16 @@
 	var GO_Profiler_Debug = function GO_Profiler_Debug() {
 		$( document ).on( 'go-profiler-data-loaded', function( event, go_profiler_data ) {
 
+			console.log( go_profiler_data );
+
+			for ( var thing in go_profiler_data ){
+				if ( ! go_profiler_data.hasOwnProperty( thing ) ){
+					continue;
+				}
+				console.log( thing );
+				console.log( go_profiler_data[thing] );
+			}
+
 			if( go_profiler_data ) {
 				var profiler_data = $.parseJSON( go_profiler_data );
 				var go_profiler_summary_row = Mustache.render( $( '#go-profiler-summary-tpl' ).html(), profiler_data );

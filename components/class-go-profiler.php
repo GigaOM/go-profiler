@@ -5,6 +5,11 @@ class GO_Profiler
 	public $hooks = array();
 	private $_queries_at_last_call = 0;
 	private $_query_running_time = 0;
+	private $epochs = array(
+		'startup',
+		'init',
+		'template_redirect',
+	);
 
 	/**
 	 * constructor
@@ -56,17 +61,16 @@ class GO_Profiler
 	 */
 	public function debug_bar_panels( $panels )
 	{
-		if ( ! class_exists( 'GO_Profiler_Hook_Panel' ) )
+		// load the template class
+		if ( ! class_exists( 'GO_Profiler_Debug_Bar_Panel' ) )
 		{
-			include __DIR__ . '/class-go-profiler-hook-panel.php';
-			$panels[] = new GO_Profiler_Hook_Panel();
+			include __DIR__ . '/class-go-profiler-debug-bar-panel.php';
 		}//end if
 
-		if ( ! class_exists( 'GO_Profiler_Aggregate_Panel' ) )
+		foreach ( $this->epochs as $epoch )
 		{
-			include __DIR__ . '/class-go-profiler-aggregate-panel.php';
-			$panels[] = new GO_Profiler_Aggregate_Panel();
-		}//end if
+			$panels[] = new GO_Profiler_Debug_Bar_Panel( $epoch );
+		}
 
 		return $panels;
 	}//end debug_bar_panels
@@ -284,14 +288,9 @@ class GO_Profiler
 		// - startup to init
 		// - init to template_redirect
 		// - template_redirect to shutdown
-		$epoch = (object) array(
-			'startup' => array(),
-		);
-		$epoch_current = 'startup';
-		$next_epoch = array(
-			'init',
-			'template_redirect',
-		);
+		$epoch = (object) array();
+		$next_epoch = $this->epochs;
+		$epoch_current = array_shift( $next_epoch );
 
 		// we'll have to iterate the hook log a few times
 		// start by iteratating to get the transcript by epoch
@@ -313,17 +312,8 @@ class GO_Profiler
 			$epoch->$k = $this->get_metrics( $v );
 		}
 
-print_r( $epoch->template_redirect );
-
-		$go_profiler_json = json_encode( array(
-			'summary'     => $epoch->init->summary,
-			'aggregate'   => $epoch->init->aggregate,
-			'transcript'  => $epoch->init->transcript,
-		) );
-
 		// @TODO: this should maybe be moved to a localize_script() call and the JS refactored to not require the $(document).trigger(...)
-		// $go_profiler_json is escaped with json_encode() just above
-		echo "<script> ( function( $ ) { var go_profiler_data = '$go_profiler_json'; $(document).trigger( 'go-profiler-data-loaded', [ go_profiler_data ] ); })( jQuery ); </script>";
+		echo '<script> ( function( $ ) { var go_profiler_data = ' . json_encode( $epoch ) . '; $(document).trigger( "go-profiler-data-loaded", [ go_profiler_data ] ); })( jQuery ); </script>';
 	}//end shutdown
 }//end class
 
