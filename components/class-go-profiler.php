@@ -308,7 +308,6 @@ class GO_Profiler
 			$epoch->$k = $this->get_metrics( $v );
 		}
 
-		// @TODO: this should maybe be moved to a localize_script() call and the JS refactored to not require the $(document).trigger(...)
 		echo '<script> ( function( $ ) { var go_profiler_data = ' . json_encode( $epoch ) . '; $(document).trigger( "go-profiler-data-loaded", [ go_profiler_data ] ); })( jQuery ); </script>';
 	}//end shutdown
 }//end class
