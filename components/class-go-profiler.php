@@ -5,7 +5,7 @@ class GO_Profiler
 	public $hooks = array();
 	private $_queries_at_last_call = 0;
 	private $_query_running_time = 0;
-	private $epochs = array(
+	public $epochs = array(
 		'startup',
 		'init',
 		'template_redirect',
@@ -65,12 +65,8 @@ class GO_Profiler
 		if ( ! class_exists( 'GO_Profiler_Debug_Bar_Panel' ) )
 		{
 			include __DIR__ . '/class-go-profiler-debug-bar-panel.php';
+			$panels[] = new GO_Profiler_Debug_Bar_Panel();
 		}//end if
-
-		foreach ( $this->epochs as $epoch )
-		{
-			$panels[] = new GO_Profiler_Debug_Bar_Panel( $epoch );
-		}
 
 		return $panels;
 	}//end debug_bar_panels

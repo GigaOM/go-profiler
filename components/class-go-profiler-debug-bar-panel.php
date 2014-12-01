@@ -5,24 +5,55 @@
 class GO_Profiler_Debug_Bar_Panel extends Debug_Bar_Panel
 {
 	/**
-	* Initializes debug-bar tab for hook transcript.
+	* Initializes debug-bar panel.
 	*/
-	public function init( $epoch )
+	public function init()
 	{
-		$this->title( 'Hooks at ' . esc_html( $epoch ) );
+		$this->title( 'Gigaom Profiler: WordPress Hooks' );
 	}//end init
 
 	/**
-	* Renders base table for go-profiler.js to fill.
+	* Renders the panel in the debug bar overlay
 	*/
 	public function render()
 	{
-		include_once __DIR__ . '/templates/go-profiler-debug-bar-panel.js';
+		require_once __DIR__ . '/templates/go-profiler-debugbarpanel-template.html';
+
 		?>
-		<table id='go-profiler-aggregate-table'>
-			<tr>
-				<td colspan="4">Filter: <input type='text' class='go-profiler-search'/></td>
-			</tr>
+		<h1>Gigaom profiler</h1>
+		<?php
+
+		foreach ( go_profiler()->epochs as $epoch )
+		{
+			?>
+			<h2><?php echo esc_js( $epoch ); ?> hooks</h2>
+			<p>Jump to <?php echo implode( ' &middot; ', go_profiler()->epochs ); ?></p>
+			<?php
+			$this->summary_table( $epoch );
+			$this->aggregate_table( $epoch );
+			$this->transcript_table( $epoch );
+		}
+	}//end render
+
+	/**
+	* Renders summary table for go-profiler.js to fill.
+	*/
+	public function summary_table( $epoch )
+	{
+		?>
+		<div id="go-profiler-debugbar-summary-table-<?php echo esc_attr( $epoch ); ?>">
+			&nbsp;
+		</div>
+		<?php
+	}//end summary_table
+
+	/**
+	* Renders aggregate table for go-profiler.js to fill.
+	*/
+	public function aggregate_table( $epoch )
+	{
+		?>
+		<table id="go-profiler-debugbar-aggregate-table-<?php echo esc_attr( $epoch ); ?>">
 			<tr>
 				<th>Hook</th>
 				<th>Calls</th>
@@ -31,11 +62,16 @@ class GO_Profiler_Debug_Bar_Panel extends Debug_Bar_Panel
 				<th>Query time</th>
 			</tr>
 		</table>
+		<?php
+	}//end aggregate_table
 
-		<table id='go-profiler-transcript-table'>
-			<tr>
-				<td colspan="3"> Filter: <input type='text' class='go-profiler-search'/></td>
-			</tr>
+	/**
+	* Renders transcript table for go-profiler.js to fill.
+	*/
+	public function transcript_table( $epoch )
+	{
+		?>
+		<table id="go-profiler-debugbar-transcript-table-<?php echo esc_attr( $epoch ); ?>">
 			<tr>
 				<th rowspan="2">Hook</th>
 				<th colspan="2">Memory</th>
@@ -71,5 +107,5 @@ class GO_Profiler_Debug_Bar_Panel extends Debug_Bar_Panel
 			</tr>
 		</table>
 		<?php
-	}//end render
+	}//end transcript_table
 }//end class
