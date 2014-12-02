@@ -5,6 +5,12 @@ class GO_Profiler_Wpcli extends WP_CLI_Command
 
 	public function test( $args, $assoc_args )
 	{
+		// don't this in New Relic
+		if ( function_exists( 'newrelic_ignore_transaction' ) )
+		{
+			newrelic_ignore_transaction();
+		}
+
 		if ( empty( $args ) )
 		{
 			WP_CLI::error( 'Please specify a URL to test.' );
