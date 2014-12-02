@@ -16,60 +16,30 @@ class GO_Profiler
 	 */
 	public function __construct()
 	{
+		if ( ! $this->active() )
+		{
+			return;
+		}
+
 		// behind the curtain: how we hook to every hook
 		// priority is a fairly large prime, Mersenne at that
 		// it really should be called at the very last thing for every hook
 		add_action( 'all', array( $this, 'hook' ), 2147483647 );
 		register_shutdown_function( array( $this, 'shutdown' ) );
-
-		// these display the profile info in the Debug bar
-		add_action( 'wp_enqueue_scripts', array( $this, 'wp_enqueue_scripts' ) );
-		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
-		add_filter( 'debug_bar_panels', array( $this, 'debug_bar_panels' ) );
 	}//end __construct
 
 	/**
-	 * enqueue scripts
+	 * Are we active for this page load?
 	 */
-	public function wp_enqueue_scripts()
+	public function active()
 	{
-		// only continue if we're in a context where the debug bar is showing
-		// and if not, then remove our tracking hook for performance
-		if (
-			! is_super_admin() ||
-			! is_admin_bar_showing() ||
-			! is_object( $GLOBALS['debug_bar'] ) ||
-			$GLOBALS['debug_bar']->is_wp_login()
-		)
+		if ( defined( 'WP_CLI' ) && WP_CLI )
 		{
-			remove_action( 'all', array( $this, 'hook' ), 2147483647 );
-			return;
+			return FALSE;
 		}
 
-		// @TODO: is either mustache or handlebars provided elsewhere in WP? ...perhaps not.
-		// @TODO: mustache is definitely provided in https://github.com/GigaOM/go-ui/tree/master/components/js/lib/external
-		wp_enqueue_script( 'mustache', plugins_url( 'js/external/mustache.min.js', __FILE__ ), FALSE, FALSE, TRUE );
-		wp_enqueue_script( 'go-profiler', plugins_url( 'js/go-profiler.js', __FILE__ ), array( 'mustache', 'jquery', 'jquery-ui-tabs' ), FALSE, TRUE );
-		wp_enqueue_style( 'go-profiler', plugins_url( 'css/go-profiler.css', __FILE__ ), FALSE, FALSE, 'all' );
-	}//end wp_enqueue_scripts
-
-	/**
-	 * add profiler panels
-	 *
-	 * @param array $panels to add
-	 * @return $panels[] go_profiler_panel
-	 */
-	public function debug_bar_panels( $panels )
-	{
-		// load the template class
-		if ( ! class_exists( 'GO_Profiler_Debug_Bar_Panel' ) )
-		{
-			include __DIR__ . '/class-go-profiler-debug-bar-panel.php';
-			$panels[] = new GO_Profiler_Debug_Bar_Panel();
-		}//end if
-
-		return $panels;
-	}//end debug_bar_panels
+		return TRUE;
+	}//end active
 
 	/**
 	 * hook
@@ -180,16 +150,22 @@ class GO_Profiler
 		foreach ( $transcript as $k => $v )
 		{
 			$transcript[ $k ] = (object) array(
-				'hook'      => $v->hook,
-				'memory'    => number_format( $v->memory / 1024 / 1024, 3 ),
-				'memory_delta'   => number_format( $delta_m[ $k ] / 1024 / 1024, 3 ),
-				'runtime'   => number_format( $v->runtime, 4 ),
-				'runtime_delta'   => number_format( $delta_t[ $k ], 4 ),
-				'query_runtime' => number_format( $v->query_runtime, 4 ),
-				'query_delta'   => number_format( $delta_q[ $k ], 4 ),
-				'query_count'   => $v->query_count,
-				'queries'   => $v->queries,
-				'backtrace' => $v->backtrace,
+				'hook'          => $v->hook,
+//				'memory'        => number_format( $v->memory / 1024 / 1024, 3 ),
+				'memory'        => $v->memory,
+//				'memory_delta'  => number_format( $delta_m[ $k ] / 1024 / 1024, 3 ),
+				'memory_delta'  => $delta_m[ $k ],
+//				'runtime'       =>  number_format( $v->runtime, 4 ),
+				'runtime'       =>  $v->runtime,
+//				'runtime_delta' => number_format( $delta_t[ $k ], 4 ),
+				'runtime_delta' => $delta_t[ $k ],
+//				'query_runtime' => number_format( $v->query_runtime, 4 ),
+				'query_runtime' => $v->query_runtime,
+//				'query_delta'   => number_format( $delta_q[ $k ], 4 ),
+				'query_delta'   => $delta_q[ $k ],
+//				'query_count'   => $v->query_count,
+				'queries'       => $v->queries,
+				'backtrace'     => $v->backtrace,
 			);
 		}//end foreach
 
@@ -207,9 +183,12 @@ class GO_Profiler
 			),
 		);
 
-		$return->summary->total_memory = number_format( array_sum( $delta_m ) / 1024 / 1024, 3 );
-		$return->summary->total_time = number_format( array_sum( $delta_t ), 4 );
-		$return->summary->total_querytime = number_format( array_sum( $delta_q ), 4 );
+//		$return->summary->total_memory = number_format( array_sum( $delta_m ) / 1024 / 1024, 3 );
+		$return->summary->total_memory = array_sum( $delta_m );
+//		$return->summary->total_time = number_format( array_sum( $delta_t ), 4 );
+		$return->summary->total_time = array_sum( $delta_t );
+//		$return->summary->total_querytime = number_format( array_sum( $delta_q ), 4 );
+		$return->summary->total_querytime = array_sum( $delta_q );
 
 		return $return;
 	}//end get_metrics
@@ -230,10 +209,14 @@ class GO_Profiler
 			$hook_mem = ( $hook_m[ $k ] / 1024 ) / 1024;
 			$return->aggregate[] = array(
 				'hook'      => $k,
-				'calls'     => number_format( $v ),
-				'memory'    => number_format( $hook_mem, 3 ),
-				'time'      => number_format( $hook_t[ $k ], 4 ),
-				'querytime' => number_format( $hook_q[ $k ], 4 ),
+//				'calls'     => number_format( $v ),
+				'calls'     => $v,
+//				'memory'    => number_format( $hook_mem, 3 ),
+				'memory'    => $hook_mem,
+//				'time'      => number_format( $hook_t[ $k ], 4 ),
+				'time'      => $hook_t[ $k ],
+//				'querytime' => number_format( $hook_q[ $k ], 4 ),
+				'querytime' => $hook_q[ $k ],
 			);
 			$return->summary->total_hooks += $v;
 
@@ -264,21 +247,25 @@ class GO_Profiler
 
 		// format the numbers
 		// @TODO: should we format the numbers in JS rather than here?
-		$return->summary->total_hooks   = number_format( $return->summary->total_hooks );
-		$return->summary->most_popular = number_format( $return->summary->most_popular );
-		$return->summary->most_memory = number_format( $return->summary->most_memory, 3 );
-		$return->summary->most_time = number_format( $return->summary->most_time, 4 );
-		$return->summary->most_querytime = number_format( $return->summary->most_querytime, 4 );
+//		$return->summary->total_hooks   = number_format( $return->summary->total_hooks );
+		$return->summary->total_hooks   = $return->summary->total_hooks;
+//		$return->summary->most_popular = number_format( $return->summary->most_popular );
+		$return->summary->most_popular = $return->summary->most_popular;
+//		$return->summary->most_memory = number_format( $return->summary->most_memory, 3 );
+		$return->summary->most_memory = $return->summary->most_memory;
+//		$return->summary->most_time = number_format( $return->summary->most_time, 4 );
+		$return->summary->most_time = $return->summary->most_time;
+//		$return->summary->most_querytime = number_format( $return->summary->most_querytime, 4 );
+		$return->summary->most_querytime = $return->summary->most_querytime;
 
 		return $return;
-	}
+	}//end summarize_and_aggregate
 
 	/**
-	 * shutdown hooks
+	 * blah hooks
 	 */
-	public function shutdown()
+	public function blah( $transcript )
 	{
-
 		// we're going to split the hook call transcript into epochs
 		// this just preps the vars, the splitting is done on the next iteration
 		// - startup to init
@@ -290,7 +277,7 @@ class GO_Profiler
 
 		// we'll have to iterate the hook log a few times
 		// start by iteratating to get the transcript by epoch
-		foreach ( $this->hooks as $v )
+		foreach ( $transcript as $v )
 		{
 			// is it time to shift epochs?
 			if ( current( $next_epoch ) == $v->hook )
@@ -308,7 +295,43 @@ class GO_Profiler
 			$epoch->$k = $this->get_metrics( $v );
 		}
 
-		echo '<script> ( function( $ ) { var go_profiler_data = ' . json_encode( $epoch ) . '; $(document).trigger( "go-profiler-data-loaded", [ go_profiler_data ] ); })( jQuery ); </script>';
+		return $epoch;
+	}//end blah
+
+	/**
+	 * prettyprint the json
+	 */
+	private function json_encode( $src )
+	{
+		return str_ireplace(
+			array(
+				'},{',
+				'],[',
+			),
+			array(
+				"},\n{",
+				"],\n[",
+			),
+			json_encode( $src )
+		);
+	}//end json_encode
+
+	/**
+	 * shutdown hooks
+	 */
+	public function shutdown()
+	{
+		global $wpdb;
+		global $wp_object_cache;
+
+		echo '<script id="go-profiler-data">' . $this->json_encode( (object) array(
+			'transcript' => $this->hooks,
+//			'queries' => $wpdb->queries,
+			'cache' => array(
+				'hits' => (int) $wp_object_cache->cache_hits,
+				'misses' => (int) $wp_object_cache->cache_misses,
+			),
+		) ) . ';</script>';
 	}//end shutdown
 }//end class
 
