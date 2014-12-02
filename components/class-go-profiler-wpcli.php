@@ -30,6 +30,9 @@ class GO_Profiler_Wpcli extends WP_CLI_Command
 		$runs = array();
 		for ( $i = 1; $i <= $args->count; $i++ )
 		{
+			// init this stat run
+			$runs[ $i ] = (object) array();
+
 			$test_url = add_query_arg( array( go_profiler()->config( 'secret' ) => rand() ), $args->url );
 			WP_CLI::line( $test_url );
 			$start_time = microtime( TRUE );
