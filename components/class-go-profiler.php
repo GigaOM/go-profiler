@@ -3,12 +3,13 @@
 class GO_Profiler
 {
 	public $config = NULL;
-	public $hooks = array();
 	public $metrics = NULL;
 	public $wpcli = NULL;
 	public $is_wpcli = FALSE;
+	public $hooks = array();
 	private $_queries_at_last_call = 0;
 	private $_query_running_time = 0;
+	public $apc_start = NULL;
 
 	/**
 	 * constructor
@@ -37,6 +38,8 @@ class GO_Profiler
 		// if we're here, we're active and running
 		// this shutdown function will output our tracking data
 		register_shutdown_function( array( $this, 'shutdown' ) );
+
+		$this->apc_start = $this->raw_apc_data();
 	}//end __construct
 
 	/**
@@ -166,6 +169,82 @@ class GO_Profiler
 		$this->_queries_at_last_call = absint( $wpdb->num_queries );
 	}//end hook
 
+	private function apc_data()
+	{
+		if ( ! $this->apc_start )
+		{
+			return $this->raw_apc_data();
+		}
+
+		$now = $this->raw_apc_data();
+
+		return (object) array(
+			'hits' => (real) $now->hits - $this->apc_start->hits,
+			'misses' => (real) $now->misses - $this->apc_start->misses,
+			'inserts' => (real) $now->inserts - $this->apc_start->inserts,
+			'fragmentation' => $now->fragmentation,
+		);
+	}
+
+	/**
+	 * get raw(-ish) apc data
+	 */
+	private function raw_apc_data()
+	{
+		if( ! function_exists('apc_cache_info' ) )
+		{
+			return (object) array(
+				'hits' => NULL,
+				'misses' => NULL,
+				'inserts' => NULL,
+				'fragmentation' => NULL,
+			);
+		}
+
+		// get basic apc cache status
+		$cache = apc_cache_info( 'opcode' );
+
+		// get and calculate fragmentation status
+		$mem = apc_sma_info();
+		$nseg = $freeseg = $fragsize = $freetotal = 0;
+		for( $i=0; $i < $mem['num_seg']; $i++ )
+		{
+			$ptr = 0;
+			foreach( $mem['block_lists'][$i] as $block )
+			{
+				if ( $block['offset'] != $ptr )
+				{
+					++$nseg;
+				}
+				$ptr = $block['offset'] + $block['size'];
+
+				/* Only consider blocks <5M for the fragmentation % */
+				if ( $block['size'] < ( 5 * 1024 * 1024 ) )
+				{
+					$fragsize += $block['size'];
+				}
+				$freetotal += $block['size'];
+			}
+			$freeseg += count( $mem['block_lists'][ $i ] );
+		}
+
+		if ( $freeseg > 1 )
+		{
+			$frag = sprintf("%.2f%% (%sM out of %sM in %d fragments)", ( $fragsize / $freetotal ) * 100, round( $fragsize / 1024 / 1024, 2 ), round( $freetotal / 1024 / 1024, 2 ), $freeseg );
+		}
+		else
+		{
+			$frag = "0%";
+		}
+
+		return (object) array(
+			'hits' => $cache['num_hits'],
+			'misses' => $cache['num_misses'],
+			'inserts' => $cache['num_inserts'],
+			'fragmentation' => $frag,
+		);
+	}//end get_apc_data
+
 	/**
 	 * prettyprint the json
 	 */
@@ -192,7 +271,7 @@ class GO_Profiler
 		global $wpdb;
 		global $wp_object_cache;
 
-		if ( function_exists( 'sys_getloadavg' ) ) 
+		if ( function_exists( 'sys_getloadavg' ) )
 		{
 			$load = sys_getloadavg();
 			$load = $load[0];
@@ -210,6 +289,7 @@ class GO_Profiler
 				'misses' => (int) $wp_object_cache->cache_misses,
 			),
 			'load' => $load,
+			'apc' => $this->apc_data(),
 		) ) . ';</script>';
 	}//end shutdown
 }//end class

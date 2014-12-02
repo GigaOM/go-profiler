@@ -60,10 +60,9 @@ class GO_Profiler_Wpcli extends WP_CLI_Command
 
 			// system load (unix-only)
 			// DB queries
-	
+
 			$fetch_body = wp_remote_retrieve_body( $fetch_raw );
 			preg_match( '|<script id="go-profiler-data">(.*);</script>|is', $fetch_body, $matches );
-
 			if ( empty( $matches[1] ) )
 			{
 				sleep( 2 );
@@ -71,7 +70,6 @@ class GO_Profiler_Wpcli extends WP_CLI_Command
 			}
 
 			$transcript = json_decode( $matches[1] );
-
 			if ( ! is_object( $transcript ) )
 			{
 				sleep( 2 );
@@ -89,6 +87,10 @@ class GO_Profiler_Wpcli extends WP_CLI_Command
 // startup, init, template_redirect
 
 			$runs[ $i ]->system_load    = $transcript->load;
+			$runs[ $i ]->apc_hits       = $transcript->apc->hits;
+			$runs[ $i ]->apc_misses     = $transcript->apc->misses;
+			$runs[ $i ]->apc_inserts    = $transcript->apc->inserts;
+			$runs[ $i ]->apc_fragmentation = $transcript->apc->fragmentation;
 			$runs[ $i ]->query_count    = $query_metrics->query_count;
 			$runs[ $i ]->query_time     = $query_metrics->query_time;
 			$runs[ $i ]->hook_count     = $hook_metrics->summary->total_hooks;
