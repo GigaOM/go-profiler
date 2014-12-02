@@ -20,6 +20,11 @@ GO Profiler Profiles the exection flow within WordPress. It adds two new panels 
 
 Note that on large sites with complex themes and/or a ton of plugins, the hook panels can be very slow...
 
+### Requires ###
+
+Set `define( 'WP_DEBUG', TRUE );` somewhere, perhaps in your `wp-config.php`. It also works better if you set `define( 'SAVEQUERIES', TRUE );` as well. The plugin tries setting it, but if you've got it set `FALSE` somewhere, that will fail.
+
+Profile information is shown inside the [Debug Bar](https://wordpress.org/plugins/debug-bar/). This plugin runs without that one, but it just increases memory consumption and reduces performance without showing anything.
 
 ### Fork me! ###
 

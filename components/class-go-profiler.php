@@ -2,66 +2,120 @@
 
 class GO_Profiler
 {
+	public $config = NULL;
+	public $metrics = NULL;
+	public $wpcli = NULL;
+	public $is_wpcli = FALSE;
 	public $hooks = array();
 	private $_queries_at_last_call = 0;
 	private $_query_running_time = 0;
+	public $apc_start = NULL;
 
 	/**
 	 * constructor
 	 */
 	public function __construct()
 	{
-		add_action( 'all', array( $this, 'hook' ), 11 ); //These go to eleven!
-		add_action( 'init', array( $this, 'init' ) );
-		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
-		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
-		add_filter( 'debug_bar_panels', array( $this, 'add_profiler_panels' ) );
+		// behind the curtain: how we hook to every hook
+		// priority is a fairly large prime, Mersenne at that
+		// it really should be called at the very last thing for every hook
+		add_action( 'all', array( $this, 'hook' ), 2147483647 );
+
+		if ( defined( 'WP_CLI' ) && WP_CLI )
+		{
+			$this->is_wpcli = TRUE;
+			$this->wpcli();
+		}
+
+		if ( ! $this->active() )
+		{
+			// remove the hook to "all" we added earler
+			// doing it in this order so we can start tracking as soon as possible
+			remove_action( 'all', array( $this, 'hook' ), 2147483647 );
+			return;
+		}
+
+		// if we're here, we're active and running
+		// this shutdown function will output our tracking data
 		register_shutdown_function( array( $this, 'shutdown' ) );
+
+		$this->apc_start = $this->raw_apc_data();
 	}//end __construct
 
 	/**
-	 * initialize
+	 * A loader for the WP:CLI class
 	 */
-	public function init()
+	public function wpcli()
 	{
-		wp_register_script( 'mustache', plugins_url( 'js/external/mustache.min.js', __FILE__ ), false, false, true );
-		wp_register_script( 'go-profiler', plugins_url( 'js/go-profiler.js', __FILE__ ), array( 'mustache', 'jquery' ), false, true );
-		wp_register_style( 'go-profiler', plugins_url( 'css/go-profiler.css', __FILE__ ), false, false, 'all' );
-	}//end init
+		if ( ! $this->wpcli )
+		{
+			require_once __DIR__ . '/class-go-profiler-wpcli.php';
+
+			// declare the class to WP:CLI
+			WP_CLI::add_command( 'go-profiler', 'GO_Profiler_Wpcli' );
+
+			$this->wpcli = TRUE;
+		}
+	}//end wpcli
 
 	/**
-	 * enqueue scripts
+	 * An accessor for the metrics object
 	 */
-	public function enqueue_scripts()
+	public function metrics()
 	{
-		wp_enqueue_script( 'mustache' );
-		wp_enqueue_script( 'go-profiler' );
-		wp_enqueue_style( 'go-profiler' );
-	}//end enqueue_scripts
+		if ( ! $this->metrics )
+		{
+			require_once __DIR__ . '/class-go-profiler-metrics.php';
+			$this->metrics = new GO_Profiler_Metrics();
+		}
+
+		return $this->metrics;
+	}//end metrics
 
 	/**
-	 * add profiler panels
-	 *
-	 * @param array $panels to add
-	 * @return $panels[] go_profiler_panel
+	 * Are we active for this page load?
 	 */
-	public function add_profiler_panels( $panels )
+	public function active()
 	{
-
-		if ( ! class_exists( 'GO_Profiler_Hook_Panel' ) )
+		// don't run on WP:CLI requests
+		if ( $this->is_wpcli )
 		{
-			include __DIR__ . '/class-go-profiler-hook-panel.php';
-			$panels[] = new GO_Profiler_Hook_Panel();
-		}//end if
+			return FALSE;
+		}
 
-		if ( ! class_exists( 'GO_Profiler_Aggregate_Panel' ) )
+		// Don't run if the secret isn't set as a $_GET var
+		if ( ! isset( $_GET[ $this->config( 'secret' ) ] ) )
 		{
-			include __DIR__ . '/class-go-profiler-aggregate-panel.php';
-			$panels[] = new GO_Profiler_Aggregate_Panel();
-		}//end if
+			return FALSE;
+		}
 
-		return $panels;
-	}//end add_profiler_panels
+		// looks like we're active and running
+		return TRUE;
+	}//end active
+
+	/**
+	 * Get config settings
+	 */
+	public function config( $key = NULL )
+	{
+		if ( ! $this->config )
+		{
+			$this->config = apply_filters(
+				'go_config',
+				array(
+					'secret' => 'abracadabra',
+				),
+				'go-profiler'
+			);
+		}//END if
+
+		if ( ! empty( $key ) )
+		{
+			return isset( $this->config[ $key ] ) ? $this->config[ $key ] : NULL ;
+		}
+
+		return $this->config;
+	}//end config
 
 	/**
 	 * hook
@@ -71,7 +125,6 @@ class GO_Profiler
 	 */
 	public function hook()
 	{
-
 		global $wpdb, $timestart;
 		$timenow = microtime( TRUE );
 
@@ -116,101 +169,128 @@ class GO_Profiler
 		$this->_queries_at_last_call = absint( $wpdb->num_queries );
 	}//end hook
 
+	private function apc_data()
+	{
+		if ( ! $this->apc_start )
+		{
+			return $this->raw_apc_data();
+		}
+
+		$now = $this->raw_apc_data();
+
+		return (object) array(
+			'hits' => (real) $now->hits - $this->apc_start->hits,
+			'misses' => (real) $now->misses - $this->apc_start->misses,
+			'inserts' => (real) $now->inserts - $this->apc_start->inserts,
+			'fragmentation' => $now->fragmentation,
+		);
+	}
+
+	/**
+	 * get raw(-ish) apc data
+	 */
+	private function raw_apc_data()
+	{
+		if( ! function_exists('apc_cache_info' ) )
+		{
+			return (object) array(
+				'hits' => NULL,
+				'misses' => NULL,
+				'inserts' => NULL,
+				'fragmentation' => NULL,
+			);
+		}
+
+		// get basic apc cache status
+		$cache = apc_cache_info( 'opcode' );
+
+		// get and calculate fragmentation status
+		$mem = apc_sma_info();
+		$nseg = $freeseg = $fragsize = $freetotal = 0;
+		for( $i=0; $i < $mem['num_seg']; $i++ )
+		{
+			$ptr = 0;
+			foreach( $mem['block_lists'][$i] as $block )
+			{
+				if ( $block['offset'] != $ptr )
+				{
+					++$nseg;
+				}
+				$ptr = $block['offset'] + $block['size'];
+
+				/* Only consider blocks <5M for the fragmentation % */
+				if ( $block['size'] < ( 5 * 1024 * 1024 ) )
+				{
+					$fragsize += $block['size'];
+				}
+				$freetotal += $block['size'];
+			}
+			$freeseg += count( $mem['block_lists'][ $i ] );
+		}
+
+		if ( $freeseg > 1 )
+		{
+			$frag = sprintf("%.2f%% (%sM out of %sM in %d fragments)", ( $fragsize / $freetotal ) * 100, round( $fragsize / 1024 / 1024, 2 ), round( $freetotal / 1024 / 1024, 2 ), $freeseg );
+		}
+		else
+		{
+			$frag = "0%";
+		}
+
+		return (object) array(
+			'hits' => $cache['num_hits'],
+			'misses' => $cache['num_misses'],
+			'inserts' => $cache['num_inserts'],
+			'fragmentation' => $frag,
+		);
+	}//end get_apc_data
+
+	/**
+	 * prettyprint the json
+	 */
+	private function json_encode( $src )
+	{
+		return str_ireplace(
+			array(
+				'},{',
+				'],[',
+			),
+			array(
+				"},\n{",
+				"],\n[",
+			),
+			json_encode( $src )
+		);
+	}//end json_encode
+
 	/**
 	 * shutdown hooks
 	 */
 	public function shutdown()
 	{
-		$delta_m = $delta_t = $delta_q = $hook = $hook_m = $hook_t = array();
-		foreach ( $this->hooks as $k => $v )
+		global $wpdb;
+		global $wp_object_cache;
+
+		if ( function_exists( 'sys_getloadavg' ) )
 		{
-			$delta_m[ $k ] = $v->memory - $this->hooks[ absint( $k - 1 ) ]->memory;
-			$delta_t[ $k ] = $v->runtime - $this->hooks[ absint( $k - 1 ) ]->runtime;
-			$delta_q[ $k ] = $v->query_runtime - $this->hooks[ absint( $k - 1 ) ]->query_runtime;
-
-			if ( ! isset( $hook[ $v->hook ] ) )
-			{
-				$hook[ $v->hook ] = 0;
-			}//end if
-			$hook[ $v->hook ]++;
-
-			if ( ! isset( $hook_m[ $v->hook ] ) )
-			{
-				$hook_m[ $v->hook ] = 0;
-			}//end if
-			$hook_m[ $v->hook ] += $delta_m[ $k ];
-
-			if ( ! isset( $hook_t[ $v->hook ] ) )
-			{
-				$hook_t[ $v->hook ] = 0;
-			}//end if
-			$hook_t[ $v->hook ] += $delta_t[ $k ];
-		}//end foreach
-
-		foreach ( $this->hooks as $k => $v )
+			$load = sys_getloadavg();
+			$load = $load[0];
+		}
+		else
 		{
-			$go_profile_hook_info[] = array(
-				'hook' => $v->hook,
-				'memory' => number_format( $v->memory / 1024 / 1024, 3 ),
-				'delta-m'   => number_format( $delta_m[ $k ] / 1024 / 1024, 3 ),
-				'runtime'   => number_format( $v->runtime, 4 ),
-				'delta-r'   => number_format( $delta_t[ $k ], 4 ),
-				'q-runtime' => number_format( $v->query_runtime, 4 ),
-				'delta-q'   => number_format( $delta_q[ $k ], 4 ),
-				'q-count'   => $v->query_count,
-				'queries'   => $v->queries,
-				'backtrace' => $v->backtrace,
-			);
-		}//end foreach
-		$go_profile_total = $go_profile_max_mem = $go_profile_longest = $go_profile_popular = 0;
+			$load = NULL;
+		}
 
-		foreach ( $hook as $k => $v )
-		{
-			$hook_mem = ( $hook_m[ $k ] / 1024 ) / 1024;
-			$go_profile_agg_hook[] = array(
-				'hook'   => $k,
-				'calls'  => number_format( $v ),
-				'memory' => number_format( $hook_mem, 3 ),
-				'time'   => number_format( $hook_t[ $k ], 4 ),
-			);
-			$go_profile_total += $v;
-
-			if ( $hook_mem > $go_profile_max_mem )
-			{
-				$go_profile_max_mem = $hook_mem;
-				$go_profile_max_mem_name = $k;
-			}//end if
-
-			if ( $hook_t[ $k ] > $go_profile_longest )
-			{
-				$go_profile_longest = $hook_t[ $k ];
-				$go_profile_longest_name = $k;
-			}//end if
-
-			if ( $v > $go_profile_popular )
-			{
-				$go_profile_popular = $v;
-				$go_profile_popular_name = $k;
-			}//end if
-		}//end foreach
-		$go_profile_summary = array(
-			'total_hooks'       => number_format( $go_profile_total ),
-			'max_mem'           => number_format( $go_profile_max_mem, 3 ),
-			'max_mem_name'      => $go_profile_max_mem_name,
-			'longest_hook'      => number_format( $go_profile_longest, 4 ),
-			'longest_hook_name' => $go_profile_longest_name,
-			'most_often'        => number_format( $go_profile_popular ),
-			'most_often_name'   => $go_profile_popular_name,
-		);
-
-		$go_profiler_json = json_encode( array(
-			'summary'   => $go_profile_summary,
-			'hooks'     => $go_profile_hook_info,
-			'aggregate' => $go_profile_agg_hook,
-		) );
-		$go_profile_ret_json = "<script> ( function( $ ) { var go_profiler_data = '$go_profiler_json'; $(document).trigger( 'go-profiler-data-loaded', [ go_profiler_data ] ); })( jQuery ); </script>";
-
-		echo $go_profile_ret_json;
+		echo '<script id="go-profiler-data">' . $this->json_encode( (object) array(
+			'hooks' => $this->hooks,
+			'queries' => $wpdb->queries,
+			'cache' => array(
+				'hits' => (int) $wp_object_cache->cache_hits,
+				'misses' => (int) $wp_object_cache->cache_misses,
+			),
+			'load' => $load,
+			'apc' => $this->apc_data(),
+		) ) . ';</script>';
 	}//end shutdown
 }//end class
 
