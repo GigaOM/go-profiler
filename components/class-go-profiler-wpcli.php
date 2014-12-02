@@ -1,6 +1,6 @@
 <?php
 // wp --url=bgeo.me --require=./test.php go-profiler test
-class GO_Profiler_WPCLI extends WP_CLI_Command
+class GO_Profiler_Wpcli extends WP_CLI_Command
 {
 
 	public function test( $args, $assoc_args )
@@ -49,6 +49,9 @@ class GO_Profiler_WPCLI extends WP_CLI_Command
 			// - last-modified
 			// - cache-control
 			// - set-cookie
+
+			// system load (unix-only)
+			// DB queries
 	
 			$fetch_body = wp_remote_retrieve_body( $fetch_raw );
 			preg_match( '|<script id="go-profiler-data">(.*);</script>|is', $fetch_body, $matches );

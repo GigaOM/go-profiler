@@ -3,6 +3,8 @@
 class GO_Profiler
 {
 	public $hooks = array();
+	public $wpcli = NULL;
+	public $is_wpcli = FALSE;
 	private $_queries_at_last_call = 0;
 	private $_query_running_time = 0;
 	public $epochs = array(
@@ -16,6 +18,13 @@ class GO_Profiler
 	 */
 	public function __construct()
 	{
+
+		if ( defined( 'WP_CLI' ) && WP_CLI )
+		{
+			$this->is_wpcli = TRUE;
+			$this->wpcli();
+		}
+
 		if ( ! $this->active() )
 		{
 			return;
@@ -29,11 +38,27 @@ class GO_Profiler
 	}//end __construct
 
 	/**
+	 * A loader for the WP:CLI class
+	 */
+	public function wpcli()
+	{
+		if ( ! $this->wpcli )
+		{
+			require_once __DIR__ . '/class-go-profiler-wpcli.php';
+
+			// declare the class to WP:CLI
+			WP_CLI::add_command( 'go-profiler', 'GO_Profiler_Wpcli' );
+
+			$this->wpcli = TRUE;
+		}
+	}//end wpcli
+
+	/**
 	 * Are we active for this page load?
 	 */
 	public function active()
 	{
-		if ( defined( 'WP_CLI' ) && WP_CLI )
+		if ( $this->is_wpcli )
 		{
 			return FALSE;
 		}
