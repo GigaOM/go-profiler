@@ -30,20 +30,19 @@ class GO_Profiler_Wpcli extends WP_CLI_Command
 		$runs = array();
 		for ( $i = 1; $i <= $args->count; $i++ )
 		{
-			$test_url = add_query_arg( array( 'rand'=> rand() ), $args->url );
+			$test_url = add_query_arg( array( go_profiler()->config( 'secret' ) => rand() ), $args->url );
 			WP_CLI::line( $test_url );
+			$start_time = microtime( TRUE );
 			$fetch_raw = wp_remote_get( $test_url, array(
 				'timeout'    => 90,
 				'user-agent' => 'Microsoft Internet Explorer or something',
 			) );
 
-			// did the API return a valid response code?
+			// time the request
+			$runs[ $i ]->response_time = microtime( TRUE ) - $start_time;
+
+			// get the response code
 			$runs[ $i ]->response_code = wp_remote_retrieve_response_code( $fetch_raw );
-			if ( 200 != wp_remote_retrieve_response_code( $fetch_raw ) )
-			{
-				sleep( 2 );
-				continue;
-			}
 
 			// headers
 			// - last-modified
@@ -70,19 +69,22 @@ class GO_Profiler_Wpcli extends WP_CLI_Command
 				continue;
 			}
 
-			$metrics = go_profiler()->get_metrics( $transcript->transcript );
+			$hook_metrics = go_profiler()->metrics()->hook_metrics( $transcript->hooks );
+			$query_metrics = go_profiler()->metrics()->query_metrics( $transcript->queries );
+
 // print_r( $metrics->summary );
-// print_r( $transcript->queries );
 // print_r( $transcript->cache );
 
 // max, min, mode
 // time, queries, query time, cache keys
 // startup, init, template_redirect
 
-			$runs[ $i ]->hooks     = $metrics->summary->total_hooks;
-			$runs[ $i ]->memory    = $metrics->summary->total_memory;
-			$runs[ $i ]->time      = $metrics->summary->total_time;
-			$runs[ $i ]->querytime = $metrics->summary->total_querytime;
+			$runs[ $i ]->system_load    = $transcript->load;
+			$runs[ $i ]->query_count    = $query_metrics->query_count;
+			$runs[ $i ]->query_time     = $query_metrics->query_time;
+			$runs[ $i ]->hook_count     = $hook_metrics->summary->total_hooks;
+			$runs[ $i ]->hook_memory    = $hook_metrics->summary->total_memory;
+			$runs[ $i ]->hook_time      = $hook_metrics->summary->total_time;
 		}
 
 		print_r( $runs );

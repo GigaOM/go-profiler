@@ -2,22 +2,23 @@
 
 class GO_Profiler
 {
+	public $config = NULL;
 	public $hooks = array();
+	public $metrics = NULL;
 	public $wpcli = NULL;
 	public $is_wpcli = FALSE;
 	private $_queries_at_last_call = 0;
 	private $_query_running_time = 0;
-	public $epochs = array(
-		'startup',
-		'init',
-		'template_redirect',
-	);
 
 	/**
 	 * constructor
 	 */
 	public function __construct()
 	{
+		// behind the curtain: how we hook to every hook
+		// priority is a fairly large prime, Mersenne at that
+		// it really should be called at the very last thing for every hook
+		add_action( 'all', array( $this, 'hook' ), 2147483647 );
 
 		if ( defined( 'WP_CLI' ) && WP_CLI )
 		{
@@ -27,13 +28,14 @@ class GO_Profiler
 
 		if ( ! $this->active() )
 		{
+			// remove the hook to "all" we added earler
+			// doing it in this order so we can start tracking as soon as possible
+			remove_action( 'all', array( $this, 'hook' ), 2147483647 );
 			return;
 		}
 
-		// behind the curtain: how we hook to every hook
-		// priority is a fairly large prime, Mersenne at that
-		// it really should be called at the very last thing for every hook
-		add_action( 'all', array( $this, 'hook' ), 2147483647 );
+		// if we're here, we're active and running
+		// this shutdown function will output our tracking data
 		register_shutdown_function( array( $this, 'shutdown' ) );
 	}//end __construct
 
@@ -72,13 +74,45 @@ class GO_Profiler
 	 */
 	public function active()
 	{
+		// don't run on WP:CLI requests
 		if ( $this->is_wpcli )
 		{
 			return FALSE;
 		}
 
+		// Don't run if the secret isn't set as a $_GET var
+		if ( ! isset( $_GET[ $this->config( 'secret' ) ] ) )
+		{
+			return FALSE;
+		}
+
+		// looks like we're active and running
 		return TRUE;
 	}//end active
+
+	/**
+	 * Get config settings
+	 */
+	public function config( $key = NULL )
+	{
+		if ( ! $this->config )
+		{
+			$this->config = apply_filters(
+				'go_config',
+				array(
+					'secret' => 'abracadabra',
+				),
+				'go-profiler'
+			);
+		}//END if
+
+		if ( ! empty( $key ) )
+		{
+			return isset( $this->config[ $key ] ) ? $this->config[ $key ] : NULL ;
+		}
+
+		return $this->config;
+	}//end config
 
 	/**
 	 * hook
@@ -158,13 +192,24 @@ class GO_Profiler
 		global $wpdb;
 		global $wp_object_cache;
 
+		if ( function_exists( 'sys_getloadavg' ) ) 
+		{
+			$load = sys_getloadavg();
+			$load = $load[0];
+		}
+		else
+		{
+			$load = NULL;
+		}
+
 		echo '<script id="go-profiler-data">' . $this->json_encode( (object) array(
-			'transcript' => $this->hooks,
-//			'queries' => $wpdb->queries,
+			'hooks' => $this->hooks,
+			'queries' => $wpdb->queries,
 			'cache' => array(
 				'hits' => (int) $wp_object_cache->cache_hits,
 				'misses' => (int) $wp_object_cache->cache_misses,
 			),
+			'load' => $load,
 		) ) . ';</script>';
 	}//end shutdown
 }//end class

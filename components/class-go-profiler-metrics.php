@@ -19,7 +19,7 @@ class GO_Profiler_Metrics
 	/**
 	 * get metrics for the hook transcript
 	 */
-	public function get_metrics( $transcript )
+	public function hook_metrics( $transcript )
 	{
 		// we'll have to iterate the hook log a few times
 		// the first is to initialize the metrics
@@ -93,7 +93,7 @@ class GO_Profiler_Metrics
 		}//end foreach
 
 		// and a final iteration over the list of hooks to summarize them
-		$summary = $this->summarize_and_aggregate( $hook, $hook_m, $hook_t, $hook_q );
+		$summary = $this->hook_summarize_and_aggregate( $hook, $hook_m, $hook_t, $hook_q );
 
 		$return = (object) array(
 			'summary'    => $summary->summary,
@@ -114,12 +114,12 @@ class GO_Profiler_Metrics
 		$return->summary->total_querytime = array_sum( $delta_q );
 
 		return $return;
-	}//end get_metrics
+	}//end hook_metrics
 
 	/**
 	 * summarize the hook metrics
 	 */
-	public function summarize_and_aggregate( $hook, $hook_m, $hook_t, $hook_q )
+	public function hook_summarize_and_aggregate( $hook, $hook_m, $hook_t, $hook_q )
 	{
 		// and a final iteration to summarize it all
 		$return = (object) array(
@@ -182,12 +182,12 @@ class GO_Profiler_Metrics
 		$return->summary->most_querytime = $return->summary->most_querytime;
 
 		return $return;
-	}//end summarize_and_aggregate
+	}//end hook_summarize_and_aggregate
 
 	/**
-	 * blah hooks
+	 * Break transcript into epochs
 	 */
-	public function blah( $transcript )
+	public function hook_epochs( $transcript )
 	{
 		// we're going to split the hook call transcript into epochs
 		// this just preps the vars, the splitting is done on the next iteration
@@ -219,23 +219,16 @@ class GO_Profiler_Metrics
 		}
 
 		return $epoch;
-	}//end blah
+	}//end hook_epochs
 
 	/**
-	 * prettyprint the json
+	 * Metrics for query transcript
 	 */
-	private function json_encode( $src )
+	public function query_metrics( $transcript )
 	{
-		return str_ireplace(
-			array(
-				'},{',
-				'],[',
-			),
-			array(
-				"},\n{",
-				"],\n[",
-			),
-			json_encode( $src )
+		return (object) array(
+			'query_count' => count( (array) $transcript ),
+			'query_time' => array_sum( wp_list_pluck( (array) $transcript, 1 ) ),
 		);
-	}//end json_encode
+	}//end query_metrics
 }//end class
