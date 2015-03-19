@@ -4,8 +4,10 @@ Name: Gigaom Execution Profiler
 Plugin URI: http://kitchen.gigaom.com/
 Description: Profiles the exection flow within WordPress
 Version: 1.0
-Author: Casey Bisson
-Author URI: http://maisonbisson.com/blog/
+Author: Gigaom
+Author URI: http://gigaom.com
+License: GPLv2
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
 */
 
 // only loads if WP_DEBUG is defined and TRUE
